@@ -1,0 +1,227 @@
+:host {
+  display: block;
+
+  --erp-primary: #1e40af;
+  --erp-primary-hover: #1d4ed8;
+  --erp-header-bg: #0f172a;
+  --erp-header-text: #f8fafc;
+  --erp-page-bg: #e8ecf1;
+  --erp-surface: #ffffff;
+  --erp-surface-muted: #f8fafc;
+  --erp-border: #d1d5db;
+  --erp-border-strong: #9ca3af;
+  --erp-text: #111827;
+  --erp-text-muted: #6b7280;
+  --erp-label: #374151;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --radius-md: 6px;
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --transition: 0.15s ease;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--erp-page-bg);
+  color: var(--erp-text);
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.topbar {
+  background: var(--erp-header-bg);
+  color: var(--erp-header-text);
+  padding: 0 var(--space-5);
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  border-bottom: 3px solid var(--erp-primary);
+  box-shadow: var(--shadow-md);
+  flex-shrink: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--erp-header-text);
+}
+
+.page-content {
+  flex: 1;
+  padding: var(--space-5);
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.empty,
+.loading-msg {
+  background: var(--erp-surface);
+  border: 1px solid var(--erp-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--erp-text-muted);
+}
+
+.table-wrapper {
+  background: var(--erp-surface);
+  border: 1px solid var(--erp-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  overflow: auto;
+  max-height: calc(100vh - 200px);
+  margin-bottom: var(--space-4);
+}
+
+.member-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.member-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--erp-surface-muted);
+  color: var(--erp-label);
+  padding: 12px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  border-bottom: 1px solid var(--erp-border);
+}
+
+.member-table tbody tr:hover {
+  background: var(--erp-surface-muted);
+}
+
+.member-table td {
+  padding: 12px 16px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--erp-border);
+  vertical-align: middle;
+}
+
+.col-no {
+  width: 80px;
+  text-align: center;
+  font-weight: 600;
+  color: var(--erp-text-muted);
+}
+
+.col-name {
+  min-width: 200px;
+}
+
+.col-dir {
+  width: 200px;
+}
+
+.dir-select {
+  width: 100%;
+  min-width: 140px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--erp-border-strong);
+  background: #ffffff;
+  color: var(--erp-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dir-select:focus {
+  outline: none;
+  border-color: var(--erp-primary);
+  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.15);
+}
+
+.action-bar {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.save-btn,
+.back-btn,
+.back-btn-bottom {
+  min-width: 120px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+  border: 1px solid transparent;
+}
+
+.save-btn {
+  background: var(--erp-primary);
+  color: #fff;
+  border-color: var(--erp-primary);
+}
+
+.save-btn:hover:not(:disabled) {
+  background: var(--erp-primary-hover);
+  border-color: var(--erp-primary-hover);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.back-btn {
+  background: transparent;
+  color: var(--erp-header-text);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.back-btn-bottom {
+  background: var(--erp-surface);
+  color: var(--erp-text);
+  border-color: var(--erp-border);
+}
+
+.back-btn-bottom:hover {
+  background: var(--erp-surface-muted);
+  border-color: var(--erp-border-strong);
+}
+
+/* Member names only — UI labels stay in default font */
+.font-marathi {
+  font-family: "Noto Sans Devanagari", Shivaji01, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.font-kannada {
+  font-family: Brhkannw, "Noto Sans Kannada", Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.4;
+}

@@ -1,0 +1,59 @@
+<div class="login-page">
+  <div class="login-lang-bar">
+    <app-language-toggle></app-language-toggle>
+  </div>
+
+  <div class="login-card">
+    <header class="login-brand">
+      <div class="brand-mark">
+        <span class="brand-icon" aria-hidden="true">🥛</span>
+      </div>
+      <h1>{{ 'common.appName' | translate }}</h1>
+      <p>{{ 'common.appSubtitle' | translate }}</p>
+    </header>
+
+    <div class="login-body">
+      <form [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+        <div class="field-group">
+          <label for="username">{{ 'login.username' | translate }}</label>
+          <input
+            id="username"
+            type="text"
+            formControlName="username"
+            [placeholder]="'login.usernamePlaceholder' | translate"
+            autocomplete="username"
+            [class.is-invalid]="f['username'].touched && f['username'].invalid">
+        </div>
+
+        <div class="field-group">
+          <label for="password">{{ 'login.password' | translate }}</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            [placeholder]="'login.passwordPlaceholder' | translate"
+            autocomplete="current-password"
+            (keydown.enter)="login()"
+            [class.is-invalid]="f['password'].touched && f['password'].invalid">
+        </div>
+
+        <div class="error-banner" *ngIf="errorMessage" role="alert">
+          {{ errorMessage }}
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="btn-primary" [disabled]="loading">
+            {{ loading ? ('login.signingIn' | translate) : ('login.signIn' | translate) }}
+          </button>
+          <button type="button" class="btn-secondary" (click)="clearForm()" [disabled]="loading">
+            {{ 'common.clear' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <footer class="login-footer">
+      {{ 'login.footer' | translate }}
+    </footer>
+  </div>
+</div>

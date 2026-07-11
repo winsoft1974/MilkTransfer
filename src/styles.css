@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #e8ecf1;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.lang-mr,
+html.lang-mr body {
+  font-family: 'Noto Sans Devanagari', 'Segoe UI', Tahoma, sans-serif;
+}
+
+html.lang-mr .brand-name,
+html.lang-mr .control-label,
+html.lang-mr .sidebar-section-title,
+html.lang-mr .side-btn,
+html.lang-mr label,
+html.lang-mr legend,
+html.lang-mr h1,
+html.lang-mr h2,
+html.lang-mr h3,
+html.lang-mr button,
+html.lang-mr .tabs button {
+  font-family: 'Noto Sans Devanagari', 'Segoe UI', Tahoma, sans-serif;
+}

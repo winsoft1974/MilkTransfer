@@ -1,0 +1,291 @@
+<div class="page">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">🥛</span>
+      <span class="brand-name">{{ 'common.appName' | translate }}</span>
+    </div>
+
+    <div class="topbar-controls">
+      <div class="control-group">
+        <label class="control-label">{{ 'home.activeYear' | translate }}</label>
+        <select class="form-control" [(ngModel)]="selectedFile" (change)="onYearDropdownChange($event)">
+          <option value="">{{ 'home.selectYear' | translate }}</option>
+          <option *ngFor="let file of dbFiles" [value]="file">
+            {{ formatYearDisplay(file) }}
+          </option>
+        </select>
+      </div>
+
+      <button
+        class="btn btn-outline"
+        type="button"
+        [title]="'home.changeDbTitle' | translate"
+        (click)="changeNetworkPath()">
+        {{ 'home.changeDbDirectory' | translate }}
+      </button>
+
+      <app-language-toggle></app-language-toggle>
+    </div>
+
+    <button class="btn btn-ghost" (click)="logout()">{{ 'home.exit' | translate }}</button>
+  </header>
+
+  <div class="info-strip" *ngIf="storage.getDatabaseName() || society">
+    <div class="info-chip" *ngIf="storage.getDatabaseName()">
+      <span class="chip-label">{{ 'home.database' | translate }}</span>
+      <span class="chip-value">{{ formatYearDisplay(storage.getDatabaseName()) || storage.getDatabaseName() }}</span>
+    </div>
+
+    <div class="info-chip accent" *ngIf="society">
+      <span class="chip-label">{{ 'home.society' | translate }}</span>
+      <span class="chip-value">{{ society.socName }}</span>
+      <span class="chip-sub">{{ 'common.code' | translate }}: {{ society.socCode }}</span>
+    </div>
+  </div>
+
+  <div class="transfer-progress-panel" *ngIf="showTransferProgress" [class.is-finished]="transferFinished">
+    <div class="progress-header">
+      <span class="progress-title">{{ transferStepLabel }}</span>
+      <span class="progress-percent">{{ transferPercent }}%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" [style.width.%]="transferPercent"></div>
+    </div>
+    <p class="progress-records" *ngIf="recordProgressSummary">{{ recordProgressSummary }}</p>
+    <ul class="progress-steps">
+      <li *ngFor="let step of transferSteps" [class]="'step-' + step.status">
+        <span class="step-icon">
+          <ng-container [ngSwitch]="step.status">
+            <span *ngSwitchCase="'done'">✓</span>
+            <span *ngSwitchCase="'failed'">✕</span>
+            <span *ngSwitchCase="'skipped'">–</span>
+            <span *ngSwitchCase="'running'">…</span>
+            <span *ngSwitchDefault>○</span>
+          </ng-container>
+        </span>
+        <span class="step-name">
+          {{ step.name }}
+          <span class="step-records" *ngIf="step.totalRecords > 0">
+            ({{ step.doneRecords }}/{{ step.totalRecords }})
+          </span>
+        </span>
+        <span class="step-status">{{ translateStepStatus(step.status) }}</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="status-bar" *ngIf="statusMsg">{{ statusMsg }}</div>
+
+  <div class="main-layout">
+
+    <aside class="sidebar">
+      <div class="sidebar-section-title">{{ 'home.masterData' | translate }}</div>
+
+      <button
+        class="side-btn side-btn--primary"
+        (click)="uploadMasterData()"
+        [disabled]="isMasterUploading || isUploading">
+        {{ masterButtonLabel }}
+      </button>
+      <p class="sidebar-hint">{{ 'home.masterHint' | translate }}</p>
+
+      <div class="sidebar-section-title">{{ 'home.configuration' | translate }}</div>
+
+      <button class="side-btn" (click)="goToUpdateMaster()">{{ 'home.setDirector' | translate }}</button>
+
+      <div class="sidebar-section-title">{{ 'home.automation' | translate }}</div>
+
+      <div class="auto-card">
+        <div>{{ 'home.autoUpload' | translate }}: <b>{{ autoUpload ? ('common.on' | translate) : ('common.off' | translate) }}</b></div>
+        <button (click)="autoUploadOn()" [disabled]="autoUpload">{{ 'home.start' | translate }}</button>
+        <button (click)="autoUploadOff()" [disabled]="!autoUpload">{{ 'home.stop' | translate }}</button>
+      </div>
+    </aside>
+
+    <main class="content">
+
+      <div class="tabs">
+        <button [class.active]="activeTab === 'upload'" (click)="activeTab = 'upload'">{{ 'home.tabUpload' | translate }}</button>
+        <button [class.active]="activeTab === 'bill'" (click)="openBillTab()">{{ 'home.tabBill' | translate }}</button>
+        <button [class.active]="activeTab === 'Download'" (click)="activeTab = 'Download'">{{ 'home.tabDownload' | translate }}</button>
+      </div>
+
+      <section *ngIf="activeTab === 'upload'" class="form-container-centered">
+        <div class="card unified-card">
+          <h3>{{ 'home.dataTransfer' | translate }}</h3>
+          <p class="transfer-hint">{{ 'home.transferHint' | translate }}</p>
+
+          <div class="transfer-row">
+            <div class="transfer-selection-box">
+              <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="transferCollection" name="transferCollection">
+                {{ 'home.milkCollectiontransfer' | translate }}
+              </label>
+              <label class="checkbox-item" *ngIf="hasMilkSale">
+                <input type="checkbox" [(ngModel)]="transferMilkSale" name="transferMilkSale">
+                {{ 'home.milkSaletransfer' | translate }}
+              </label>
+              <label class="checkbox-item" *ngIf="hasLedger">
+                <input type="checkbox" [(ngModel)]="transferAccount" name="transferAccount">
+                {{ 'home.accounttransfer' | translate }}
+              </label>
+            </div>
+
+            <div class="transfer-right-col">
+              <div class="transfer-dates-row">
+  <div class="field">
+    <mat-form-field appearance="fill">
+      <mat-label>{{ 'home.fromDate' | translate }}</mat-label>
+      <input matInput [matDatepicker]="fromPicker" [(ngModel)]="fromDate" name="fromDate" id="fromDate">
+      <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+      <mat-datepicker #fromPicker></mat-datepicker>
+    </mat-form-field>
+  </div>
+  <div class="field">
+    <mat-form-field appearance="fill">
+      <mat-label>{{ 'home.toDate' | translate }}</mat-label>
+      <input matInput [matDatepicker]="toPicker" [(ngModel)]="toDate" name="toDate" id="toDate">
+      <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+      <mat-datepicker #toPicker></mat-datepicker>
+    </mat-form-field>
+  </div>
+</div>
+
+              <div
+                class="shift-milk-row"
+                [class.shift-only]="!transferCollection && transferMilkSale">
+                <div class="field option-field" *ngIf="transferCollection || transferMilkSale">
+                  <label class="option-field-label">{{ 'home.shift' | translate }}</label>
+                  <div class="option-radios-row">
+                    <label class="option-radio"><input type="radio" name="collectionTime" [value]="0" [(ngModel)]="collectionTime"> {{ 'home.both' | translate }}</label>
+                    <label class="option-radio"><input type="radio" name="collectionTime" [value]="1" [(ngModel)]="collectionTime"> {{ 'home.morning' | translate }}</label>
+                    <label class="option-radio"><input type="radio" name="collectionTime" [value]="2" [(ngModel)]="collectionTime"> {{ 'home.evening' | translate }}</label>
+                  </div>
+                </div>
+
+                <div class="field option-field" *ngIf="transferCollection">
+                  <label class="option-field-label">{{ 'home.milkType' | translate }}</label>
+                  <div class="option-radios-row">
+                    <label class="option-radio"><input type="radio" name="milkType" [value]="0" [(ngModel)]="milkType"> {{ 'home.both' | translate }}</label>
+                    <label class="option-radio"><input type="radio" name="milkType" [value]="1" [(ngModel)]="milkType"> {{ 'home.cow' | translate }}</label>
+                    <label class="option-radio"><input type="radio" name="milkType" [value]="2" [(ngModel)]="milkType"> {{ 'home.buffalo' | translate }}</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="primary-btn"
+            (click)="submitUnifiedTransfer()"
+            [disabled]="(isUploading && !transferFinished) || !hasTransferSelection || !fromDate || !toDate">
+            {{ submitButtonLabel }}
+          </button>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab === 'bill'" class="tab-content">
+        <div class="card">
+          <h3>{{ 'home.billTransfer' | translate }}</h3>
+
+          <div class="bill-row">
+            <select
+              class="form-control"
+              name="billPeriod"
+              [(ngModel)]="selectedPeriodId"
+              (ngModelChange)="onPeriodIdChange($event)"
+              [disabled]="isUploading || billPeriodsLoading">
+              <option [ngValue]="null">{{ 'home.selectBillPeriod' | translate }}</option>
+              <option *ngFor="let p of billPeriods" [ngValue]="p.id">
+                {{ p.name }}
+              </option>
+            </select>
+
+            <button
+              class="bill-submit-btn"
+              (click)="uploadBill()"
+              [disabled]="(isUploading && !transferFinished) || !selectedPeriod">
+              {{ billSubmitLabel }}
+            </button>
+          </div>
+
+          <div class="bill-status" *ngIf="statusMsg">{{ statusMsg }}</div>
+        </div>
+      </section>
+
+      <section *ngIf="activeTab === 'Download'" class="tab-content centered-form">
+        <div class="download-container">
+          <fieldset class="main-fieldset">
+            <legend>{{ 'home.milkReceivedDownload' | translate }}</legend>
+
+            <div class="form-row">
+              <label class="row-label" for="deviceSelect">{{ 'home.device' | translate }}</label>
+              <select id="deviceSelect" class="form-control" [(ngModel)]="selectedDevice">
+                <option value="">{{ 'home.selectDevice' | translate }}</option>
+                <option *ngFor="let d of devices" [value]="d.deviceId">
+                  {{ d.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label class="row-label">{{ 'home.dateRange' | translate }}</label>
+              <div class="date-range">
+                <input type="date" [(ngModel)]="downloadFromDate" class="form-control date-input" />
+                <span class="to-text">{{ 'common.to' | translate }}</span>
+                <input type="date" [(ngModel)]="downloadToDate" class="form-control date-input" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label class="row-label">{{ 'home.shift' | translate }}</label>
+              <div class="radio-group">
+                <label class="radio-item">
+                  <input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="0" /> {{ 'home.both' | translate }}
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="1" /> {{ 'home.morning' | translate }}
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="2" /> {{ 'home.evening' | translate }}
+                </label>
+              </div>
+            </div>
+
+            <fieldset class="sub-fieldset">
+              <legend>{{ 'home.milkType' | translate }}</legend>
+              <div class="radio-group centered-group">
+                <label class="radio-item">
+                  <input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="0" /> {{ 'home.both' | translate }}
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="1" /> {{ 'home.cow' | translate }}
+                </label>
+                <label class="radio-item">
+                  <input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="2" /> {{ 'home.buffalo' | translate }}
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="form-actions">
+              <button
+                class="win-btn"
+                (click)="downloadCollection()"
+                [disabled]="isUploading && !transferFinished">
+                {{ downloadCollectionLabel }}
+              </button>
+              <button
+                class="win-btn"
+                (click)="downloadMilkSale()"
+                [disabled]="isUploading && !transferFinished">
+                {{ downloadMilkSaleLabel }}
+              </button>
+            </div>
+          </fieldset>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>

@@ -1,0 +1,59 @@
+<div class="page">
+
+  <header class="topbar">
+    <h1 class="page-title">{{ 'director.title' | translate }}</h1>
+
+    <div class="topbar-actions">
+      <app-language-toggle></app-language-toggle>
+      <button type="button" class="back-btn" (click)="goBack()">
+        {{ 'common.back' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="page-content">
+
+    <div *ngIf="loading" class="loading-msg">
+      {{ 'common.loading' | translate }}…
+    </div>
+
+    <div *ngIf="!loading && members.length === 0" class="empty">
+      {{ 'common.noMembers' | translate }}
+    </div>
+
+    <div *ngIf="!loading && members.length > 0" class="table-wrapper">
+      <table class="member-table">
+        <thead>
+          <tr>
+            <th class="col-no">{{ 'director.no' | translate }}</th>
+            <th class="col-name">{{ 'director.memberName' | translate }}</th>
+            <th class="col-dir">{{ 'director.director' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let member of members; trackBy: trackByMember">
+            <td class="col-no">{{ member.membCode }}</td>
+            <td class="col-name" [ngClass]="tableFontClass">{{ member.membName }}</td>
+            <td class="col-dir">
+              <select [(ngModel)]="member.isDir" class="dir-select">
+                <option *ngFor="let opt of directorOptions" [ngValue]="opt.id">
+                  {{ opt.nameKey | translate }}
+                </option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="action-bar" *ngIf="!loading && members.length > 0">
+      <button type="button" class="save-btn" (click)="save()" [disabled]="saving">
+        {{ saving ? ('common.saving' | translate) : ('common.save' | translate) }}
+      </button>
+      <button type="button" class="back-btn-bottom" (click)="goBack()">
+        {{ 'common.back' | translate }}
+      </button>
+    </div>
+
+  </div>
+</div>
