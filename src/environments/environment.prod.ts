@@ -6,6 +6,8 @@ export const environment = {
   // Securely loads from Vercel's Environment Variables during build
   apiUrl: process.env['NG_APP_API_URL'] || '',
 
+   accessApiUrl: 'https://localhost:7267/api/access',
+   
   appName: 'Milk Transfer',
 
   autoUploadInterval: 60000
