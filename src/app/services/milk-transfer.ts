@@ -748,19 +748,18 @@ postMilkTrnManual(payload: any, deviceId: number = 1): Observable<any> {
 /**
  * FINAL FIX FOR GET 400: Match C# Line 72 exactly
  */
- checkMilkSaleServerStatus(from: string, to: string, time: number): Observable<any> {
-    const soc = this.storage.getSocCode();
-    
-    // Explicitly match the legacy desktop client's exact parameter names and types
-    const params = new HttpParams()
-      .set('fromdate', this.toIsoDateString(from))
-      .set('todate', this.toIsoDateString(to))
-      .set('time', time.toString())
-      .set('soccode', soc.toString());
+checkMilkSaleServerStatus(from: string, to: string, time: number, deviceId: number): Observable<any> {
+  const soc = this.storage.getSocCode();
+  
+  const params = new HttpParams()
+    .set('fromdate', this.toIsoDateString(from))
+    .set('todate', this.toIsoDateString(to))
+    .set('time', time.toString())
+    .set('soccode', soc.toString())
+    .set('deviceid', deviceId.toString()); // <-- Added deviceid parameter
 
-    // Matches Url + "milktrn" (all lowercase) from working C# code
-    return this.http.get<any[]>(`${this.apiUrl}/milktrn`, { params });
-  }
+  return this.http.get<any[]>(`${this.apiUrl}/milktrn`, { params });
+}
 
 
 // Helper for date formatting inside the service

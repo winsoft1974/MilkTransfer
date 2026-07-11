@@ -1866,7 +1866,7 @@ async downloadCollection(): Promise<void> {
 
   if (!confirm.isConfirmed) return;
 
-  const cobf = this.downloadMilkType === 1 ? 'C' : (this.downloadMilkType === 2 ? 'B' : 'A');
+  const cobf = this.downloadMilkType === 1 ? 'C' : (this.downloadMilkType === 2 ? 'B' : '0');
   const stepNames = [
     this.t('home.progress.clearLocal'),
     this.t('home.progress.downloadFromServer'),
@@ -1960,7 +1960,7 @@ async downloadMilkSale(): Promise<void> {
 
       let serverHasData = false;
       try {
-        const res = await firstValueFrom(this.milkService.checkMilkSaleServerStatus(chunk.from, chunk.to, shift));
+        const res = await firstValueFrom(this.milkService.checkMilkSaleServerStatus(chunk.from, chunk.to, shift, devId));
         serverHasData = res && res.length > 0;
       } catch {
         serverHasData = false;
