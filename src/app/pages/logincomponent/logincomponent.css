@@ -44,41 +44,25 @@
 }
 
 .login-brand {
-  background: var(--erp-header-bg);
-  color: #f8fafc;
-  padding: 32px 28px 28px;
+  background: #ffffff;
+  padding: 32px 28px 20px;
   text-align: center;
   border-bottom: 3px solid var(--erp-primary);
 }
 
-.brand-mark {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.brand-icon {
-  font-size: 28px;
-  line-height: 1;
-}
-
-.login-brand h1 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+.company-logo {
+  max-width: 260px;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 12px;
+  display: block;
 }
 
 .login-brand p {
   margin: 6px 0 0;
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--erp-text-secondary);
+  font-weight: 500;
 }
 
 .login-body {

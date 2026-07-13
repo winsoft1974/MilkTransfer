@@ -2,8 +2,7 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-icon">🥛</span>
-      <span class="brand-name">{{ 'common.appName' | translate }}</span>
+      <img src="logo.png" alt="Winsoft Logo" class="topbar-logo">
     </div>
 
     <div class="topbar-controls">
@@ -257,35 +256,25 @@
     </mat-form-field>
   </div>
 </div>
-            <div class="form-row">
-              <label class="row-label">{{ 'home.shift' | translate }}</label>
-              <div class="radio-group">
-                <label class="radio-item">
-                  <input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="0" /> {{ 'home.both' | translate }}
-                </label>
-                <label class="radio-item">
-                  <input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="1" /> {{ 'home.morning' | translate }}
-                </label>
-                <label class="radio-item">
-                  <input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="2" /> {{ 'home.evening' | translate }}
-                </label>
+            <div class="shift-milk-row">
+              <div class="field option-field">
+                <label class="option-field-label">{{ 'home.shift' | translate }}</label>
+                <div class="option-radios-row">
+                  <label class="option-radio"><input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="0" /> {{ 'home.both' | translate }}</label>
+                  <label class="option-radio"><input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="1" /> {{ 'home.morning' | translate }}</label>
+                  <label class="option-radio"><input type="radio" name="downTime" [(ngModel)]="downloadTime" [value]="2" /> {{ 'home.evening' | translate }}</label>
+                </div>
+              </div>
+
+              <div class="field option-field">
+                <label class="option-field-label">{{ 'home.milkType' | translate }}</label>
+                <div class="option-radios-row">
+                  <label class="option-radio"><input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="0" /> {{ 'home.both' | translate }}</label>
+                  <label class="option-radio"><input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="1" /> {{ 'home.cow' | translate }}</label>
+                  <label class="option-radio"><input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="2" /> {{ 'home.buffalo' | translate }}</label>
+                </div>
               </div>
             </div>
-
-            <fieldset class="sub-fieldset">
-              <legend>{{ 'home.milkType' | translate }}</legend>
-              <div class="radio-group centered-group">
-                <label class="radio-item">
-                  <input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="0" /> {{ 'home.both' | translate }}
-                </label>
-                <label class="radio-item">
-                  <input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="1" /> {{ 'home.cow' | translate }}
-                </label>
-                <label class="radio-item">
-                  <input type="radio" name="downMilkType" [(ngModel)]="downloadMilkType" [value]="2" /> {{ 'home.buffalo' | translate }}
-                </label>
-              </div>
-            </fieldset>
 
             <div class="form-actions">
               <button
