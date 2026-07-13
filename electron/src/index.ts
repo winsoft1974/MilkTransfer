@@ -1,18 +1,39 @@
-import type { CapacitorElectronConfig } from '@capacitor-community/electron';
-import { getCapacitorElectronConfig, setupElectronDeepLinking } from '@capacitor-community/electron';
-import type { MenuItemConstructorOptions } from 'electron';
-// import { app, MenuItem } from 'electron';
 import { app, MenuItem } from 'electron';
-import { spawn } from 'child_process';
-import { join } from 'path';
+import type { MenuItemConstructorOptions } from 'electron';
+import { getCapacitorElectronConfig, setupElectronDeepLinking } from '@capacitor-community/electron';
+import type { CapacitorElectronConfig } from '@capacitor-community/electron';
+import { spawn, exec } from 'child_process';
+import { join, dirname } from 'path';
 import electronIsDev from 'electron-is-dev';
 import unhandled from 'electron-unhandled';
-// import { autoUpdater } from 'electron-updater';
 
 import { ElectronCapacitorApp, setupContentSecurityPolicy, setupReloadWatcher } from './setup';
 
 // Graceful handling of unhandled errors.
 unhandled();
+
+// Global variable to hold the backend child process
+let backendProcess: any = null;
+
+// Function to safely stop the backend process
+function killBackend() {
+  if (backendProcess) {
+    console.log('Shutting down backend process (PID:', backendProcess.pid, ')...');
+    if (process.platform === 'win32') {
+      // Forcefully terminate the process tree on Windows
+      exec(`taskkill /pid ${backendProcess.pid} /T /F`, (err) => {
+        if (err) {
+          console.error('Failed to taskkill backend:', err);
+        } else {
+          console.log('Backend killed successfully.');
+        }
+      });
+    } else {
+      backendProcess.kill();
+    }
+    backendProcess = null;
+  }
+}
 
 // Define our menu templates (these are optional)
 const trayMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [new MenuItem({ label: 'Quit App', role: 'quit' })];
@@ -25,7 +46,6 @@ const appMenuBarMenuTemplate: (MenuItemConstructorOptions | MenuItem)[] = [
 const capacitorFileConfig: CapacitorElectronConfig = getCapacitorElectronConfig();
 
 // Initialize our app. You can pass menu templates into the app here.
-// const myCapacitorApp = new ElectronCapacitorApp(capacitorFileConfig);
 const myCapacitorApp = new ElectronCapacitorApp(capacitorFileConfig, trayMenuTemplate, appMenuBarMenuTemplate);
 
 // If deeplinking is enabled then we will set it up here.
@@ -40,53 +60,43 @@ if (electronIsDev) {
   setupReloadWatcher(myCapacitorApp);
 }
 
-// Run Application
-// (async () => {
-//   // Wait for electron app to be ready.
-//   await app.whenReady();
-//   // Security - Set Content-Security-Policy based on whether or not we are in dev mode.
-//   setupContentSecurityPolicy(myCapacitorApp.getCustomURLScheme());
-//   // Initialize our app, build windows, and load content.
-//   await myCapacitorApp.init();
-//   // Check for updates if we are in a packaged app.
-//   // autoUpdater.checkForUpdatesAndNotify();
-// })();
-
-
 (async () => {
-
   await app.whenReady();
 
   try {
+    let backendExe: string;
+    if (electronIsDev) {
+      // In development (resolves relative to the running build directory)
+      backendExe = join(__dirname, '..', '..', 'backend', 'AccessToPostgres.exe');
+    } else {
+      // In production, looks inside the extraResources directory
+      backendExe = join(process.resourcesPath, 'backend', 'AccessToPostgres.exe');
+    }
 
-    const backendExe = join(
-      process.resourcesPath,
-      'app.asar.unpacked',
-      'backend',
-      'AccessToPostgres.exe'
-    );
-
+    const backendDir = dirname(backendExe);
     console.log('Starting backend:', backendExe);
 
-    const backend = spawn(backendExe, [], {
+    // Spawn process with working directory context so backend configuration files load properly
+    backendProcess = spawn(backendExe, [], {
+      cwd: backendDir,
       detached: false,
-      shell: true
+      shell: false
     });
 
-    backend.on('spawn', () => {
-      console.log('Backend started');
+    backendProcess.on('spawn', () => {
+      console.log('Backend started with PID:', backendProcess.pid);
     });
 
-    backend.on('error', (err) => {
-      console.error('Backend failed:', err);
+    backendProcess.on('error', (err: any) => {
+      console.error('Backend failed to start:', err);
     });
 
-    backend.on('exit', (code) => {
-      console.log('Backend exited:', code);
+    backendProcess.on('exit', (code: any) => {
+      console.log('Backend exited with code:', code);
     });
 
   } catch (err) {
-    console.error(err);
+    console.error('Error starting backend:', err);
   }
 
   await new Promise(r => setTimeout(r, 3000));
@@ -96,11 +106,11 @@ if (electronIsDev) {
   );
 
   await myCapacitorApp.init();
-
 })();
 
-// Handle when all of our windows are close (platforms have their own expectations).
+// Handle when all of our windows are closed
 app.on('window-all-closed', function () {
+  killBackend();
   // On OS X it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
@@ -108,13 +118,15 @@ app.on('window-all-closed', function () {
   }
 });
 
+// Extra event hooks to capture quit signals
+app.on('before-quit', killBackend);
+app.on('will-quit', killBackend);
+
 // When the dock icon is clicked.
 app.on('activate', async function () {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (myCapacitorApp.getMainWindow().isDestroyed()) {
+  // Safe handling of potentially null window reference
+  const mainWindow = myCapacitorApp.getMainWindow();
+  if (mainWindow && mainWindow.isDestroyed()) {
     await myCapacitorApp.init();
   }
 });
-
-// Place all ipc or other electron api calls and custom functionality under this line

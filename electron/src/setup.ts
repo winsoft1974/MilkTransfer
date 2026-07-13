@@ -13,11 +13,16 @@ import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
 
 // Define components for a watcher to detect when the webapp is changed so we can reload in Dev mode.
-const reloadWatcher = {
+const reloadWatcher: {
+  debouncer: any;
+  ready: boolean;
+  watcher: any;
+} = {
   debouncer: null,
   ready: false,
   watcher: null,
 };
+
 export function setupReloadWatcher(electronCapacitorApp: ElectronCapacitorApp): void {
   reloadWatcher.watcher = chokidar
     .watch(join(app.getAppPath(), 'app'), {
@@ -29,11 +34,15 @@ export function setupReloadWatcher(electronCapacitorApp: ElectronCapacitorApp): 
     })
     .on('all', (_event, _path) => {
       if (reloadWatcher.ready) {
-        clearTimeout(reloadWatcher.debouncer);
-        reloadWatcher.debouncer = setTimeout(async () => {
-          electronCapacitorApp.getMainWindow().webContents.reload();
-          reloadWatcher.ready = false;
+        if (reloadWatcher.debouncer) {
           clearTimeout(reloadWatcher.debouncer);
+        }
+        reloadWatcher.debouncer = setTimeout(async () => {
+          electronCapacitorApp.getMainWindow()?.webContents.reload();
+          reloadWatcher.ready = false;
+          if (reloadWatcher.debouncer) {
+            clearTimeout(reloadWatcher.debouncer);
+          }
           reloadWatcher.debouncer = null;
           reloadWatcher.watcher = null;
           setupReloadWatcher(electronCapacitorApp);
@@ -55,8 +64,8 @@ export class ElectronCapacitorApp {
     { role: process.platform === 'darwin' ? 'appMenu' : 'fileMenu' },
     { role: 'viewMenu' },
   ];
-  private mainWindowState;
-  private loadWebApp;
+  private mainWindowState: any;
+  private loadWebApp: any;
   private customScheme: string;
 
   constructor(
@@ -89,7 +98,7 @@ export class ElectronCapacitorApp {
   }
 
   // Expose the mainWindow ref for use outside of the class.
-  getMainWindow(): BrowserWindow {
+  getMainWindow(): BrowserWindow | null {
     return this.MainWindow;
   }
 
@@ -117,28 +126,28 @@ export class ElectronCapacitorApp {
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: true,
-        // Use preload to inject the electron varriant overrides for capacitor plugins.
-        // preload: join(app.getAppPath(), "node_modules", "@capacitor-community", "electron", "dist", "runtime", "electron-rt.js"),
         preload: preloadPath,
       },
     });
     this.mainWindowState.manage(this.MainWindow);
 
-    if (this.CapacitorFileConfig.backgroundColor) {
+    // Explicitly check properties to completely bypass the compiler null-warnings
+    if (this.MainWindow && this.CapacitorFileConfig.electron && typeof this.CapacitorFileConfig.electron.backgroundColor === 'string') {
       this.MainWindow.setBackgroundColor(this.CapacitorFileConfig.electron.backgroundColor);
     }
 
-    // If we close the main window with the splashscreen enabled we need to destory the ref.
-    this.MainWindow.on('closed', () => {
-      if (this.SplashScreen?.getSplashWindow() && !this.SplashScreen.getSplashWindow().isDestroyed()) {
-        this.SplashScreen.getSplashWindow().close();
+    // If we close the main window with the splashscreen enabled we need to destroy the ref.
+    this.MainWindow?.on('closed', () => {
+      const splashWin = this.SplashScreen?.getSplashWindow();
+      if (splashWin && !splashWin.isDestroyed()) {
+        splashWin.close();
       }
     });
 
     // When the tray icon is enabled, setup the options.
     if (this.CapacitorFileConfig.electron?.trayIconAndMenuEnabled) {
       this.TrayIcon = new Tray(icon);
-      this.TrayIcon.on('double-click', () => {
+      this.TrayIcon?.on('double-click', () => {
         if (this.MainWindow) {
           if (this.MainWindow.isVisible()) {
             this.MainWindow.hide();
@@ -148,7 +157,7 @@ export class ElectronCapacitorApp {
           }
         }
       });
-      this.TrayIcon.on('click', () => {
+      this.TrayIcon?.on('click', () => {
         if (this.MainWindow) {
           if (this.MainWindow.isVisible()) {
             this.MainWindow.hide();
@@ -158,20 +167,26 @@ export class ElectronCapacitorApp {
           }
         }
       });
-      this.TrayIcon.setToolTip(app.getName());
-      this.TrayIcon.setContextMenu(Menu.buildFromTemplate(this.TrayMenuTemplate));
+      this.TrayIcon?.setToolTip(app.getName());
+      this.TrayIcon?.setContextMenu(Menu.buildFromTemplate(this.TrayMenuTemplate));
     }
 
     // Setup the main manu bar at the top of our window.
     Menu.setApplicationMenu(Menu.buildFromTemplate(this.AppMenuBarMenuTemplate));
 
     // If the splashscreen is enabled, show it first while the main window loads then switch it out for the main window, or just load the main window from the start.
-    if (this.CapacitorFileConfig.electron?.splashScreenEnabled) {
+    const config = this.CapacitorFileConfig;
+    if (config.electron?.splashScreenEnabled) {
+      let splashScreenImageName: string = 'splash.png';
+      if (config.electron && typeof config.electron.splashScreenImageName === 'string') {
+        splashScreenImageName = config.electron.splashScreenImageName;
+      }
+
       this.SplashScreen = new CapacitorSplashScreen({
         imageFilePath: join(
           app.getAppPath(),
           'assets',
-          this.CapacitorFileConfig.electron?.splashScreenImageName ?? 'splash.png'
+          splashScreenImageName
         ),
         windowWidth: 400,
         windowHeight: 400,
@@ -182,15 +197,15 @@ export class ElectronCapacitorApp {
     }
 
     // Security
-    this.MainWindow.webContents.setWindowOpenHandler((details) => {
+    this.MainWindow?.webContents.setWindowOpenHandler((details) => {
       if (!details.url.includes(this.customScheme)) {
         return { action: 'deny' };
       } else {
         return { action: 'allow' };
       }
     });
-    this.MainWindow.webContents.on('will-navigate', (event, _newURL) => {
-      if (!this.MainWindow.webContents.getURL().includes(this.customScheme)) {
+    this.MainWindow?.webContents.on('will-navigate', (event, _newURL) => {
+      if (this.MainWindow && !this.MainWindow.webContents.getURL().includes(this.customScheme)) {
         event.preventDefault();
       }
     });
@@ -199,15 +214,16 @@ export class ElectronCapacitorApp {
     setupCapacitorElectronPlugins();
 
     // When the web app is loaded we hide the splashscreen if needed and show the mainwindow.
-    this.MainWindow.webContents.on('dom-ready', () => {
-      if (this.CapacitorFileConfig.electron?.splashScreenEnabled) {
-        this.SplashScreen.getSplashWindow().hide();
+    this.MainWindow?.webContents.on('dom-ready', () => {
+      const splashWin = this.SplashScreen?.getSplashWindow();
+      if (this.CapacitorFileConfig.electron?.splashScreenEnabled && splashWin) {
+        splashWin.hide();
       }
-      if (!this.CapacitorFileConfig.electron?.hideMainWindowOnLaunch) {
+      if (!this.CapacitorFileConfig.electron?.hideMainWindowOnLaunch && this.MainWindow) {
         this.MainWindow.show();
       }
       setTimeout(() => {
-        if (electronIsDev) {
+        if (electronIsDev && this.MainWindow) {
           this.MainWindow.webContents.openDevTools();
         }
         CapElectronEventEmitter.emit('CAPELECTRON_DeeplinkListenerInitialized', '');
@@ -218,6 +234,26 @@ export class ElectronCapacitorApp {
 
 // Set a CSP up for our application based on the custom scheme
 export function setupContentSecurityPolicy(customScheme: string): void {
+  // 1. Intercept relative /api requests and route them dynamically
+  session.defaultSession.webRequest.onBeforeRequest(
+    { urls: [`${customScheme}://*/api/*`] },
+    (details, callback) => {
+      let redirectURL = details.url;
+
+      if (details.url.includes('/api/access/')) {
+        // Local database operations go to your local C# background service
+        redirectURL = details.url.replace(`${customScheme}://-/`, 'https://localhost:7267/');
+      } else {
+        // Cloud operations (like login, master upload) go to your remote server on port 2002
+        redirectURL = details.url.replace(`${customScheme}://-/`, 'http://103.102.144.180:2002/');
+      }
+
+      console.log(`[Proxy] Redirecting: ${details.url} -> ${redirectURL}`);
+      callback({ redirectURL });
+    }
+  );
+
+  // 2. Set up CSP headers
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
