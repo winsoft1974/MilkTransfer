@@ -462,6 +462,24 @@ buildYearList(fileNames: string[]): void {
   // Inside HomeComponent class in home.ts
 
 async changeNetworkPath(): Promise<void> {
+  const { value: password } = await Swal.fire({
+    title: 'Authentication Required',
+    input: 'password',
+    inputPlaceholder: 'Enter password',
+    inputAttributes: {
+      autocapitalize: 'off',
+      autocorrect: 'off'
+    },
+    showCancelButton: true
+  });
+
+  if (password !== '123') {
+    if (password !== undefined && password !== '') {
+      Swal.fire('Error', 'Incorrect password', 'error');
+    }
+    return;
+  }
+
   let currentPath = '';
   try {
     currentPath = (await firstValueFrom(this.accessService.getConfigPath())).trim();
