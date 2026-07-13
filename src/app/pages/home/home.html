@@ -229,15 +229,34 @@
               </select>
             </div>
 
-            <div class="form-row">
+            <!-- <div class="form-row">
               <label class="row-label">{{ 'home.dateRange' | translate }}</label>
               <div class="date-range">
                 <input type="date" [(ngModel)]="downloadFromDate" class="form-control date-input" />
                 <span class="to-text">{{ 'common.to' | translate }}</span>
                 <input type="date" [(ngModel)]="downloadToDate" class="form-control date-input" />
               </div>
-            </div>
+            </div> -->
 
+            <div class="form-row" style="display: flex; gap: 16px; width: 100%; align-items: center;">
+  <div class="field" style="flex: 1; min-width: 0;">
+    <mat-form-field appearance="fill" style="width: 100%;">
+      <mat-label>{{ 'home.fromDate' | translate }}</mat-label>
+      <input matInput [matDatepicker]="fromPicker" [(ngModel)]="downloadFromDate" name="downloadFromDate" id="downloadFromDate">
+      <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+      <mat-datepicker #fromPicker></mat-datepicker>
+    </mat-form-field>
+  </div>
+
+  <div class="field" style="flex: 1; min-width: 0;">
+    <mat-form-field appearance="fill" style="width: 100%;">
+      <mat-label>{{ 'home.toDate' | translate }}</mat-label>
+      <input matInput [matDatepicker]="toPicker" [(ngModel)]="downloadToDate" name="downloadToDate" id="downloadToDate">
+      <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+      <mat-datepicker #toPicker></mat-datepicker>
+    </mat-form-field>
+  </div>
+</div>
             <div class="form-row">
               <label class="row-label">{{ 'home.shift' | translate }}</label>
               <div class="radio-group">
