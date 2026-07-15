@@ -134,7 +134,7 @@
             <div class="transfer-right-col">
               <div class="transfer-dates-row">
   <div class="field">
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>{{ 'home.fromDate' | translate }}</mat-label>
       <input matInput [matDatepicker]="fromPicker" [(ngModel)]="fromDate" name="fromDate" id="fromDate">
       <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
@@ -142,7 +142,7 @@
     </mat-form-field>
   </div>
   <div class="field">
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>{{ 'home.toDate' | translate }}</mat-label>
       <input matInput [matDatepicker]="toPicker" [(ngModel)]="toDate" name="toDate" id="toDate">
       <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
@@ -239,7 +239,7 @@
 
             <div class="form-row" style="display: flex; gap: 16px; width: 100%; align-items: center;">
   <div class="field" style="flex: 1; min-width: 0;">
-    <mat-form-field appearance="fill" style="width: 100%;">
+    <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>{{ 'home.fromDate' | translate }}</mat-label>
       <input matInput [matDatepicker]="fromPicker" [(ngModel)]="downloadFromDate" name="downloadFromDate" id="downloadFromDate">
       <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
@@ -248,7 +248,7 @@
   </div>
 
   <div class="field" style="flex: 1; min-width: 0;">
-    <mat-form-field appearance="fill" style="width: 100%;">
+    <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>{{ 'home.toDate' | translate }}</mat-label>
       <input matInput [matDatepicker]="toPicker" [(ngModel)]="downloadToDate" name="downloadToDate" id="downloadToDate">
       <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
