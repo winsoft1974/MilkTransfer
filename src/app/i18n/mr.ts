@@ -97,6 +97,7 @@ export const mr = {
     dateRange: 'दिनांक श्रेणी',
     downloadCollection: 'संकलन डाउनलोड',
     downloadMilkSale: 'दूध विक्री डाउनलोड',
+    downloadDeductions: 'वजावट',
     noPeriodsFound: 'कालावधी सापडले नाहीत',
     status: {
       scanningDb: 'डेटाबेस फाइल्स शोधत आहे...',

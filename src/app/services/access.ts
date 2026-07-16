@@ -131,6 +131,19 @@ private toCleanDate(dateVal: any): string {
     });
   }
 
+  /**
+   * Saves deductions into local Access DB.
+   * POST /api/access/save-deductions?fileName=...
+   * Body: AccessDedentryDto[]
+   */
+  saveDeductions(fileName: string, records: any[]): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/save-deductions`,
+      records,
+      { params: { fileName } }
+    );
+  }
+
   getBillTransRecords(fileName: string, fromDate: string, toDate: string): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/billtrans-records`, {
       params: { 

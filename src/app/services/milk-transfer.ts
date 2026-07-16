@@ -321,6 +321,26 @@ sendMilkCollection(
     );
   }
 
+  /**
+   * Fetches deduction records from live server for download into Access.
+   * GET /api/dedentry?fromdate=&todate=&soccode=
+   */
+  getDeductionsFromLive(fromDate: string, toDate: string): Observable<any[]> {
+    const params = new HttpParams()
+      .set('fromdate', this.toIsoDateString(fromDate))
+      .set('todate', this.toIsoDateString(toDate))
+      .set('soccode', this.storage.getSocCode());
+
+    return this.http.get<any>(`${this.apiUrl}/dedentry`, { params }).pipe(
+      map(res => {
+        if (Array.isArray(res)) return res;
+        if (res && Array.isArray(res.data)) return res.data;
+        return [];
+      }),
+      catchError(() => of([]))
+    );
+  }
+
   postDeductions(data: any[]): Observable<any> {
     const headers = new HttpHeaders({ 'Content-Type': 'application/json-patch+json' });
     return this.http.post(`${this.apiUrl}/dedentry`, data, { headers });

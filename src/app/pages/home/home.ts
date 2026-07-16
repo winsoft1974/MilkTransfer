@@ -69,7 +69,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   transferFinished = false;
   transferRecordsDone = 0;
   transferRecordsTotal = 0;
-  activeTransferKind: 'upload' | 'master' | 'bill' | 'download-col' | 'download-sale' | null = null;
+  activeTransferKind: 'upload' | 'master' | 'bill' | 'download-col' | 'download-sale' | 'download-ded' | null = null;
   transferSteps: {
     name: string;
     status: 'pending' | 'running' | 'done' | 'failed' | 'skipped';
@@ -166,6 +166,13 @@ cobf = '';
     if (this.transferFinished && this.activeTransferKind === 'download-sale') return this.t('common.finished');
     if (this.isUploading && this.activeTransferKind === 'download-sale') return this.t('common.syncing', { percent: this.transferPercent });
     return this.t('home.downloadMilkSale');
+  }
+
+  get downloadDeductionsLabel(): string {
+    this.lang.lang();
+    if (this.transferFinished && this.activeTransferKind === 'download-ded') return this.t('common.finished');
+    if (this.isUploading && this.activeTransferKind === 'download-ded') return this.t('common.downloading', { percent: this.transferPercent });
+    return this.t('home.downloadDeductions');
   }
 
   get recordProgressSummary(): string {
@@ -2197,6 +2204,115 @@ async downloadMilkSale(): Promise<void> {
     this.touchProgress();
     if (this.transferFinished) this.scheduleProgressHide();
   }
+}
+
+/**
+ * Download deductions from live server into local Access DB.
+ * Uses download date range only.
+ * Flow: Fetch live /dedentry -> POST localhost /save-deductions
+ */
+async downloadDeductions(): Promise<void> {
+  const fileName = this.storage.getDatabaseName();
+
+  if (!this.downloadFromDate || !this.downloadToDate) {
+    Swal.fire(this.t('common.error'), this.t('home.swal.selectDates'), 'error');
+    return;
+  }
+
+  const confirm = await Swal.fire({
+    title: this.t('home.swal.overwriteDeductionsTitle'),
+    text: this.t('home.swal.overwriteDownloadText'),
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: this.t('common.yesOverwrite'),
+    cancelButtonText: this.t('common.cancel'),
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  const stepNames = [
+    this.t('home.progress.downloadFromServer'),
+    this.t('home.progress.saveToDatabase'),
+  ];
+
+  this.isUploading = true;
+  this.transferFinished = false;
+  this.activeTransferKind = 'download-ded';
+  this.beginProgress(stepNames);
+
+  const succeeded: string[] = [];
+  const failed: string[] = [];
+  const skipped: string[] = [];
+
+  try {
+    this.setStepRunning(0, this.t('home.progress.fetchingLive'));
+    const remoteData = await firstValueFrom(
+      this.milkService.getDeductionsFromLive(this.downloadFromDate, this.downloadToDate)
+    ) as any[];
+
+    if (!remoteData?.length) {
+      this.setStepSkipped(0);
+      this.setStepSkipped(1);
+      skipped.push(this.t('home.progress.downloadFromServer') + ' (' + this.t('home.progress.skipped') + ')');
+      await this.completeProgress(succeeded, failed, skipped);
+      return;
+    }
+
+    // Map live records to AccessDedentryDto shape expected by save-deductions
+    const payload = remoteData.map((r: any) => ({
+      dedctnDate: this.toAccessDate(r.dedctnDate ?? r.DedctnDate ?? r.dedctndate),
+      dedctnTrno: Number(r.dedctnTrno ?? r.DedctnTrno ?? r.dedctntrno ?? 0),
+      dedcode: Number(r.dedcode ?? r.Dedcode ?? r.dedCode ?? 0),
+      membCode: Number(r.membCode ?? r.MembCode ?? r.memb_code ?? 0),
+      dedctnAmt1: Number(r.dedctnAmt1 ?? r.DedctnAmt1 ?? r.dedctnamt1 ?? 0),
+      actdedAmt: Number(r.actdedAmt ?? r.ActdedAmt ?? r.actdedamt ?? 0),
+      cobf: String(r.cobf ?? r.Cobf ?? 'C').substring(0, 1).toUpperCase(),
+      trntype: Number(r.trntype ?? r.Trntype ?? r.trnType ?? 0),
+      mbillno: Number(r.mbillno ?? r.Mbillno ?? r.mBillNo ?? 0),
+      billno: Number(r.billno ?? r.Billno ?? r.billNo ?? 0),
+    }));
+
+    this.setStepRecordProgress(0, payload.length, payload.length, this.t('home.progress.downloaded'));
+    this.setStepDone(0);
+    this.refreshProgressPercent();
+
+    this.setStepRunning(1, this.t('home.progress.savingLocal'));
+    await firstValueFrom(this.accessService.saveDeductions(fileName, payload));
+    this.setStepRecordProgress(1, payload.length, payload.length, this.t('home.progress.deductionsUploaded'));
+    this.setStepDone(1);
+
+    succeeded.push(`${this.t('home.downloadDeductions')} (${payload.length})`);
+    this.syncGlobalRecordTotals();
+    await this.completeProgress(succeeded, failed, skipped);
+  } catch (err: any) {
+    console.error(err);
+    await this.failProgress(this.t('home.swal.downloadFailed', { detail: err.message || this.t('home.swal.uploadFailedServer') }));
+    failed.push(this.t('home.downloadDeductions'));
+  } finally {
+    this.isUploading = false;
+    this.touchProgress();
+    if (this.transferFinished) this.scheduleProgressHide();
+  }
+}
+
+/** Format date for Access DedctnDate field (yyyy-MM-dd) */
+private toAccessDate(val: any): string {
+  if (!val) return '';
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    const yyyy = val.getFullYear();
+    const mm = String(val.getMonth() + 1).padStart(2, '0');
+    const dd = String(val.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  const str = String(val).trim();
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return str.split('T')[0] || '';
 }
 
 /**

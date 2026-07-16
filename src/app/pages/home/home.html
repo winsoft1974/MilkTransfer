@@ -394,6 +394,12 @@
                 [disabled]="isUploading && !transferFinished">
                 {{ downloadMilkSaleLabel }}
               </button>
+              <button
+                class="win-btn"
+                (click)="downloadDeductions()"
+                [disabled]="isUploading && !transferFinished">
+                {{ downloadDeductionsLabel }}
+              </button>
             </div>
           </fieldset>
         </div>

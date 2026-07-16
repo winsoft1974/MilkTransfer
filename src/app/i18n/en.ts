@@ -97,6 +97,7 @@ export const en = {
     dateRange: 'Date Range',
     downloadCollection: 'Download Collection',
     downloadMilkSale: 'Download Milk Sale',
+    downloadDeductions: 'Deduction',
     noPeriodsFound: 'No Periods Found',
     status: {
       scanningDb: 'Scanning database files...',
