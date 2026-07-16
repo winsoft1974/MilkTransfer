@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, switchMap, of } from 'rxjs';
+import { Observable, switchMap, of, forkJoin } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { StorageService } from './storage';
 
@@ -87,14 +87,49 @@ export class MasterService {
     );
   }
 
-  updateSocietyMembers(socCode: number, members: any[]): Observable<any> {
+  /**
+   * Updates a single member's director status.
+   * PUT /Member/{socCode}/{membCode}  body: { isDir: number }
+   */
+  updateMemberDirector(socCode: number, membCode: number, isDir: number): Observable<any> {
     return this.http.put(
-      `${this.apiUrl}/member/${socCode}`,
-      members,
+      `${this.apiUrl}/Member/${socCode}/${membCode}`,
+      { isDir },
       this.getHeaders()
     );
   }
 
+  /**
+   * Saves changed director values for multiple members in parallel.
+   * Only sends a request for members whose isDir value changed.
+   */
+  updateSocietyMembers(socCode: number, original: any[], updated: any[]): Observable<any[]> {
+    const changed = updated.filter(m => {
+      const orig = original.find(o => o.membCode === m.membCode);
+      return orig && orig.isDir !== m.isDir;
+    });
+
+    if (!changed.length) {
+      return of([]);
+    }
+
+    const requests = changed.map(m =>
+      this.updateMemberDirector(socCode, m.membCode, m.isDir)
+    );
+
+    return forkJoin(requests);
+  }
+
+
+  // ============================
+  // LATEST DATES DASHBOARD
+  // ============================
+  getLatestAll(socCode: number): Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/Acctrn/latest-all?soccode=${socCode}`,
+      this.getHeaders()
+    );
+  }
 
   // Add this inside the MasterService class in master.ts
 sendZones(payload: any): Observable<any> {

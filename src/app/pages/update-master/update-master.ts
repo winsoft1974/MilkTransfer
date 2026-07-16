@@ -25,6 +25,7 @@ export class UpdateMasterComponent implements OnInit {
   public lang = inject(LanguageService);
 
   members: any[] = [];
+  originalMembers: any[] = [];   // snapshot of values as loaded from server
   searchQuery: string = '';
   loading = false;
   saving = false;
@@ -74,12 +75,21 @@ export class UpdateMasterComponent implements OnInit {
   }
 
   get filteredMembers(): any[] {
-    if (!this.searchQuery) return this.members;
-    const lowerQuery = this.searchQuery.toLowerCase();
-    return this.members.filter(m => {
-      const nameMatch = (m.membName || '').toLowerCase().includes(lowerQuery);
-      const codeMatch = String(m.membCode || '').includes(lowerQuery);
-      return nameMatch || codeMatch;
+    const list = this.searchQuery
+      ? this.members.filter(m => {
+          const lowerQuery = this.searchQuery.toLowerCase();
+          const nameMatch = (m.membName || '').toLowerCase().includes(lowerQuery);
+          const codeMatch = String(m.membCode || '').includes(lowerQuery);
+          return nameMatch || codeMatch;
+        })
+      : [...this.members];
+
+    // Directors/Collection (isDir > 0) first, then by membCode ascending
+    return list.sort((a, b) => {
+      const aIsDir = (a.isDir ?? 0) > 0 ? 0 : 1;
+      const bIsDir = (b.isDir ?? 0) > 0 ? 0 : 1;
+      if (aIsDir !== bIsDir) return aIsDir - bIsDir;
+      return (a.membCode ?? 0) - (b.membCode ?? 0);
     });
   }
 
@@ -92,7 +102,8 @@ export class UpdateMasterComponent implements OnInit {
 
   this.masterService.getMembersBySociety(this.socCode).subscribe({
     next: (res: any[]) => {
-      this.members = [...res];
+      this.members = res.map(m => ({ ...m }));          // editable copy
+      this.originalMembers = res.map(m => ({ ...m }));  // immutable snapshot
       this.loading = false;
       this.cdr.detectChanges();
     },
@@ -107,7 +118,7 @@ export class UpdateMasterComponent implements OnInit {
     this.saving = true;
 
     this.masterService
-      .updateSocietyMembers(this.socCode, this.members)
+      .updateSocietyMembers(this.socCode, this.originalMembers, this.members)
       .subscribe({
         next: () => {
           alert(this.lang.t('director.updatedSuccess'));

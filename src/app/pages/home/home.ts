@@ -106,6 +106,19 @@ cobf = '';
   hasMilkSale = false;
   hasLedger = false;
 
+  latestDates: {
+    milkCollection: string; milkCollectionMe: number | null; milkCollectionCobf: string;
+    milkSale:       string; milkSaleMe:       number | null; milkSaleCobf:       string;
+    account:        string;
+    billTransfer:   string;
+  } = {
+    milkCollection: '--', milkCollectionMe: null, milkCollectionCobf: '',
+    milkSale:       '--', milkSaleMe:       null, milkSaleCobf:       '',
+    account:        '--',
+    billTransfer:   '--',
+  };
+  latestDatesLoading = false;
+
   members: any[] = [];
   private cobfMap: Record<number, string> = { 0: '', 1: 'C', 2: 'B' };
   isRateChartSending = false;
@@ -182,6 +195,12 @@ ngOnInit(): void {
   if (!this.storage.getToken()) {
     this.router.navigate(['/login']);
     return;
+  }
+
+  // Load latest transfer dates immediately — socCode is available right after login
+  const socId = Number(this.storage.getSocCode());
+  if (socId) {
+    this.loadLatestDates(socId);
   }
 
   // Bridge API keeps the folder path — just load available MDB files after login.
@@ -342,10 +361,47 @@ loadSociety(): void {
 
       // Load devices ONLY after society is confirmed
       this.loadDevices();
+
+      // Load latest transfer dates for the dashboard
+      this.loadLatestDates(socId);
     },
     error: err => {
       console.error('Failed to load society profile:', err);
       this.setStatus(this.t('home.status.errorLoadingSociety'));
+    }
+  });
+}
+
+loadLatestDates(socId: number): void {
+  this.latestDatesLoading = true;
+  this.masterService.getLatestAll(socId).subscribe({
+    next: (res: any) => {
+      const fmt = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '--';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '--';
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yyyy = d.getFullYear();
+        return `${dd}-${mm}-${yyyy}`;
+      };
+
+      this.latestDates = {
+        milkCollection:    fmt(res?.milktrn?.trndate),
+        milkCollectionMe:  res?.milktrn?.me ?? null,
+        milkCollectionCobf: (res?.milktrn?.cobf ?? '').toUpperCase(),
+        milkSale:          fmt(res?.milksale?.trdate),
+        milkSaleMe:        res?.milksale?.me ?? null,
+        milkSaleCobf:      (res?.milksale?.cobf ?? '').toUpperCase(),
+        account:           fmt(res?.acctrn?.trdates),
+        billTransfer:      fmt(res?.billtran?.billdate),
+      };
+      this.latestDatesLoading = false;
+      this.cdr.detectChanges();
+    },
+    error: err => {
+      console.error('Failed to load latest dates:', err);
+      this.latestDatesLoading = false;
     }
   });
 }

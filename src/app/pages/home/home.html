@@ -185,30 +185,79 @@
         </div>
 
         <div class="card dummy-dashboard" style="width: 280px; flex-shrink: 0; background: var(--erp-surface-muted); border: 1px solid var(--erp-border); border-radius: var(--radius-lg); padding: var(--space-4);">
-          <h3 style="font-size: 1rem; color: var(--erp-text); margin-bottom: var(--space-3); border-bottom: 2px solid var(--erp-primary-light); padding-bottom: 8px;">
-            {{ 'home.latestTransfers' | translate }}
-          </h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-3); border-bottom: 2px solid var(--erp-primary-light); padding-bottom: 8px;">
+            <h3 style="font-size: 1rem; color: var(--erp-text); margin: 0;">
+              {{ 'home.latestTransfers' | translate }}
+            </h3>
+            <button
+              type="button"
+              title="Refresh"
+              [disabled]="latestDatesLoading"
+              (click)="loadLatestDates(+storage.getSocCode()!)"
+              style="background: none; border: none; cursor: pointer; font-size: 1rem; color: var(--erp-primary); padding: 2px 6px; border-radius: 4px; line-height: 1; transition: opacity 0.2s;"
+              [style.opacity]="latestDatesLoading ? '0.4' : '1'">
+              ↻
+            </button>
+          </div>
           
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.milkCollection' | translate }}</div>
-              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.milkSale' | translate }}</div>
-              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
-            </div>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.account' | translate }}</div>
-              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
+
+            <!-- Milk Collection -->
+            <div style="background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.milkCollection' | translate }}</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--erp-primary);">
+                  {{ latestDatesLoading ? '…' : latestDates.milkCollection }}
+                </div>
+              </div>
+              <div *ngIf="!latestDatesLoading && latestDates.milkCollection !== '--'" style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+                <span *ngIf="latestDates.milkCollectionMe === 1 || latestDates.milkCollectionMe === 2"
+                  style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #e8f4fd; color: #1a6fa8; border: 1px solid #c0ddf5;">
+                  {{ latestDates.milkCollectionMe === 1 ? ('home.morning' | translate) : ('home.evening' | translate) }}
+                </span>
+                <span *ngIf="latestDates.milkCollectionCobf === 'C' || latestDates.milkCollectionCobf === 'B'"
+                  style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #e9fbe9; color: #1e7a1e; border: 1px solid #b7deb7;">
+                  {{ latestDates.milkCollectionCobf === 'C' ? ('home.cow' | translate) : ('home.buffalo' | translate) }}
+                </span>
+              </div>
             </div>
 
+            <!-- Milk Sale -->
+            <div style="background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.milkSale' | translate }}</div>
+                <div style="font-size: 0.9rem; font-weight: 700; color: var(--erp-primary);">
+                  {{ latestDatesLoading ? '…' : latestDates.milkSale }}
+                </div>
+              </div>
+              <div *ngIf="!latestDatesLoading && latestDates.milkSale !== '--'" style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">
+                <span *ngIf="latestDates.milkSaleMe === 1 || latestDates.milkSaleMe === 2"
+                  style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #e8f4fd; color: #1a6fa8; border: 1px solid #c0ddf5;">
+                  {{ latestDates.milkSaleMe === 1 ? ('home.morning' | translate) : ('home.evening' | translate) }}
+                </span>
+                <span *ngIf="latestDates.milkSaleCobf === 'C' || latestDates.milkSaleCobf === 'B'"
+                  style="font-size: 0.68rem; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: #e9fbe9; color: #1e7a1e; border: 1px solid #b7deb7;">
+                  {{ latestDates.milkSaleCobf === 'C' ? ('home.cow' | translate) : ('home.buffalo' | translate) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Account -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.account' | translate }}</div>
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--erp-primary);">
+                {{ latestDatesLoading ? '…' : latestDates.account }}
+              </div>
+            </div>
+
+            <!-- Bill Transfer -->
             <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
               <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.billTransfer' | translate }}</div>
-              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
+              <div style="font-size: 0.9rem; font-weight: 700; color: var(--erp-primary);">
+                {{ latestDatesLoading ? '…' : latestDates.billTransfer }}
+              </div>
             </div>
+
           </div>
         </div>
 
