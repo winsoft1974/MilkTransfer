@@ -128,6 +128,9 @@ export const en = {
       transferFinished: 'Transfer finished',
       transferStopped: 'Transfer stopped due to an unexpected error.',
       masterUploadStopped: 'Master data upload stopped due to an error.',
+      stillTransferring: 'Transfer is still running. Large data takes time — please wait.',
+      noInternet: 'No internet connection. Please check your network.',
+      slowNetwork: 'Slow network detected. Transfer may take longer than usual.',
     },
     progress: {
       pending: 'pending',

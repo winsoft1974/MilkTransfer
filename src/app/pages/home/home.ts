@@ -80,6 +80,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   isMasterUploading = false;
 
+  // ── Toast notifications ──
+  toasts: { id: number; type: 'info' | 'success' | 'warning' | 'error'; message: string }[] = [];
+  private toastCounter = 0;
+
+  // ── Transfer elapsed timer ──
+  transferElapsedSeconds = 0;
+  private elapsedInterval: any = null;
+  private slowStepInterval: any = null;
+
   years: { name: string; tvalue: string }[] = [];
 
   selectedYear = '';
@@ -452,6 +461,52 @@ loadDevices() {
 
   ngOnDestroy(): void {
     this.stopAutoUploadTimer();
+    this.stopTransferTimers();
+  }
+
+  // =====================================================
+  // TOAST SYSTEM
+  // =====================================================
+  showToast(type: 'info' | 'success' | 'warning' | 'error', message: string, duration = 4000): void {
+    const id = ++this.toastCounter;
+    this.toasts.push({ id, type, message });
+    this.cdr.detectChanges();
+    if (duration > 0) {
+      setTimeout(() => this.dismissToast(id), duration);
+    }
+  }
+
+  dismissToast(id: number): void {
+    this.toasts = this.toasts.filter(t => t.id !== id);
+    this.cdr.detectChanges();
+  }
+
+  // =====================================================
+  // TRANSFER TIMERS
+  // =====================================================
+  stopTransferTimers(): void {
+    if (this.elapsedInterval) { clearInterval(this.elapsedInterval); this.elapsedInterval = null; }
+    if (this.slowStepInterval) { clearInterval(this.slowStepInterval); this.slowStepInterval = null; }
+  }
+
+  // =====================================================
+  // NETWORK CHECK
+  // =====================================================
+  checkNetworkBeforeTransfer(): boolean {
+    if (!navigator.onLine) {
+      this.showToast('error', this.t('home.status.noInternet'), 0);
+      return false;
+    }
+    const conn = (navigator as any).connection;
+    if (conn?.effectiveType && ['slow-2g', '2g'].includes(conn.effectiveType)) {
+      this.showToast('warning', this.t('home.status.slowNetwork'), 8000);
+    }
+    return true;
+  }
+
+  formatElapsed(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
   }
 
   // =====================================================
@@ -892,6 +947,23 @@ private beginProgress(stepNames: string[]): void {
     detail: ''
   }));
   this.setStatus(this.transferStepLabel, true);
+
+  // Start elapsed timer
+  this.transferElapsedSeconds = 0;
+  if (this.elapsedInterval) clearInterval(this.elapsedInterval);
+  this.elapsedInterval = setInterval(() => {
+    this.transferElapsedSeconds++;
+    this.cdr.detectChanges();
+  }, 1000);
+
+  // Slow-step watcher: warn after 12s, repeat every 30s
+  if (this.slowStepInterval) clearInterval(this.slowStepInterval);
+  this.slowStepInterval = setInterval(() => {
+    if (!this.transferFinished) {
+      this.showToast('warning', this.t('home.status.stillTransferring'), 8000);
+    }
+  }, 12000);
+
   this.cdr.detectChanges();
 }
 
@@ -1108,6 +1180,16 @@ private async completeProgress(succeeded: string[], failed: string[], skipped: s
     });
   }
 
+  this.stopTransferTimers();
+  this.showToast(
+    !failed.length && succeeded.length ? 'success' : failed.length && !succeeded.length ? 'error' : 'warning',
+    !failed.length && succeeded.length
+      ? this.t('home.status.allTransfersSuccess')
+      : failed.length && !succeeded.length
+        ? this.t('home.status.transferFailed')
+        : this.t('home.status.transferPartial'),
+    6000
+  );
   this.touchProgress();
 }
 
@@ -1121,6 +1203,8 @@ private async failProgress(message: string): Promise<void> {
     if (step.status === 'running') step.status = 'failed';
   }
 
+  this.stopTransferTimers();
+  this.showToast('error', message, 6000);
   await Swal.fire(this.t('common.error'), message, 'error');
   this.touchProgress();
 }

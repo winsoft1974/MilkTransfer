@@ -218,6 +218,103 @@
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* ================= TOAST SYSTEM ================= */
+.toast-stack {
+  position: fixed;
+  bottom: 80px;
+  right: var(--space-5);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 380px;
+  pointer-events: none;
+}
+
+.toast-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  box-shadow: var(--shadow-lg);
+  animation: toastIn 0.25s ease;
+  pointer-events: all;
+  border-left: 4px solid transparent;
+  background: #fff;
+}
+
+@keyframes toastIn {
+  from { transform: translateX(30px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.toast-info    { border-left-color: var(--erp-primary); background: #eff6ff; color: #1e40af; }
+.toast-success { border-left-color: var(--erp-success); background: #ecfdf5; color: #065f46; }
+.toast-warning { border-left-color: var(--erp-warning); background: #fffbeb; color: #92400e; }
+.toast-error   { border-left-color: var(--erp-danger);  background: #fef2f2; color: #991b1b; }
+
+.toast-icon { font-size: 1rem; flex-shrink: 0; line-height: 1.4; }
+.toast-msg  { flex: 1; }
+.toast-close {
+  background: none; border: none; cursor: pointer; font-size: 1rem;
+  color: inherit; opacity: 0.5; padding: 0; line-height: 1; flex-shrink: 0;
+}
+.toast-close:hover { opacity: 1; }
+
+/* ================= ANIMATED PROGRESS BAR ================= */
+@keyframes progressStripes {
+  from { background-position: 0 0; }
+  to   { background-position: 40px 0; }
+}
+
+.progress-fill.is-active {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--erp-primary),
+    var(--erp-primary) 10px,
+    #3b5fc0 10px,
+    #3b5fc0 20px
+  );
+  background-size: 40px 40px;
+  animation: progressStripes 0.8s linear infinite;
+}
+
+/* ================= ELAPSED TIMER ================= */
+.progress-elapsed {
+  font-size: 0.75rem;
+  color: var(--erp-text-muted);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.progress-elapsed .elapsed-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--erp-primary);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ================= SPINNING STEP ICON ================= */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.step-running .step-icon {
+  animation: spin 1s linear infinite;
+}
+
 /* ================= PROGRESS PANEL ================= */
 .transfer-progress-panel {
   width: calc(100% - var(--space-5) * 2);
