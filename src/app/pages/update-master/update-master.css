@@ -213,10 +213,16 @@
   border-color: var(--erp-border-strong);
 }
 
+@font-face {
+  font-family: 'Shivaji01';
+  src: url('/fonts/Shivaji01.ttf') format('truetype');
+  font-display: swap;
+}
+
 /* Member names only — UI labels stay in default font */
 .font-marathi {
-  font-family: "Noto Sans Devanagari", Shivaji01, Arial, sans-serif;
-  font-size: 1rem;
+  font-family: 'Shivaji01', "Noto Sans Devanagari", Arial, sans-serif;
+  font-size: 1.15rem; /* bumped up slightly for better readability of this specific font */
   line-height: 1.4;
 }
 

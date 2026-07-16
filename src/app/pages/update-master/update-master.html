@@ -21,6 +21,10 @@
       {{ 'common.noMembers' | translate }}
     </div>
 
+    <div *ngIf="!loading && members.length > 0" class="search-container" style="margin-bottom: var(--space-4);">
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" [class.font-marathi]="lang.isMarathi()" placeholder="Search members by name..." class="form-control" style="max-width: 300px; padding: 10px 14px; border: 1px solid var(--erp-border-strong); border-radius: var(--radius-md);">
+    </div>
+
     <div *ngIf="!loading && members.length > 0" class="table-wrapper">
       <table class="member-table">
         <thead>
@@ -31,9 +35,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let member of members; trackBy: trackByMember">
+          <tr *ngFor="let member of filteredMembers; trackBy: trackByMember">
             <td class="col-no">{{ member.membCode }}</td>
-            <td class="col-name" [ngClass]="tableFontClass">{{ member.membName }}</td>
+            <td class="col-name" [class.font-marathi]="lang.isMarathi()">{{ member.membName }}</td>
             <td class="col-dir">
               <select [(ngModel)]="member.isDir" class="dir-select">
                 <option *ngFor="let opt of directorOptions" [ngValue]="opt.id">

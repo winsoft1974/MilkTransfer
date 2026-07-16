@@ -22,9 +22,10 @@ export class UpdateMasterComponent implements OnInit {
   private storage = inject(StorageService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  private lang = inject(LanguageService);
+  public lang = inject(LanguageService);
 
   members: any[] = [];
+  searchQuery: string = '';
   loading = false;
   saving = false;
   
@@ -70,6 +71,20 @@ export class UpdateMasterComponent implements OnInit {
         console.error('Error loading society', err);
       }
     });
+  }
+
+  get filteredMembers(): any[] {
+    if (!this.searchQuery) return this.members;
+    const lowerQuery = this.searchQuery.toLowerCase();
+    return this.members.filter(m => {
+      const nameMatch = (m.membName || '').toLowerCase().includes(lowerQuery);
+      const codeMatch = String(m.membCode || '').includes(lowerQuery);
+      return nameMatch || codeMatch;
+    });
+  }
+
+  onSearchChange() {
+    this.cdr.detectChanges();
   }
 
   loadMembers() {

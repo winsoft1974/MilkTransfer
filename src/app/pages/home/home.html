@@ -111,9 +111,10 @@
       </div>
 
       <section *ngIf="activeTab === 'upload'" class="form-container-centered">
-        <div class="card unified-card">
-          <h3>{{ 'home.dataTransfer' | translate }}</h3>
-          <p class="transfer-hint">{{ 'home.transferHint' | translate }}</p>
+        <div class="upload-layout" style="display: flex; gap: 24px; width: 100%; align-items: flex-start; flex-wrap: wrap;">
+          <div class="card unified-card" style="flex: 1; min-width: 300px;">
+            <h3>{{ 'home.dataTransfer' | translate }}</h3>
+            <p class="transfer-hint">{{ 'home.transferHint' | translate }}</p>
 
           <div class="transfer-row">
             <div class="transfer-selection-box">
@@ -182,6 +183,36 @@
             {{ submitButtonLabel }}
           </button>
         </div>
+
+        <div class="card dummy-dashboard" style="width: 280px; flex-shrink: 0; background: var(--erp-surface-muted); border: 1px solid var(--erp-border); border-radius: var(--radius-lg); padding: var(--space-4);">
+          <h3 style="font-size: 1rem; color: var(--erp-text); margin-bottom: var(--space-3); border-bottom: 2px solid var(--erp-primary-light); padding-bottom: 8px;">
+            {{ 'home.latestTransfers' | translate }}
+          </h3>
+          
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.milkCollection' | translate }}</div>
+              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.milkSale' | translate }}</div>
+              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.account' | translate }}</div>
+              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px 12px; border: 1px solid var(--erp-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.75rem; color: var(--erp-label); font-weight: 600; text-transform: uppercase;">{{ 'home.billTransfer' | translate }}</div>
+              <div style="font-size: 1rem; font-weight: 700; color: var(--erp-primary);">--</div>
+            </div>
+          </div>
+        </div>
+
+        </div> <!-- close upload-layout -->
       </section>
 
       <section *ngIf="activeTab === 'bill'" class="tab-content">
