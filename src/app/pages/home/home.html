@@ -144,15 +144,15 @@
           <div class="transfer-row">
             <div class="transfer-selection-box">
               <label class="checkbox-item">
-                <input type="checkbox" [(ngModel)]="transferCollection" name="transferCollection">
+                <input type="checkbox" [(ngModel)]="transferCollection" name="transferCollection" (change)="onTransferCheckboxChange()">
                 {{ 'home.milkCollectiontransfer' | translate }}
               </label>
               <label class="checkbox-item" *ngIf="hasMilkSale">
-                <input type="checkbox" [(ngModel)]="transferMilkSale" name="transferMilkSale">
+                <input type="checkbox" [(ngModel)]="transferMilkSale" name="transferMilkSale" (change)="onTransferCheckboxChange()">
                 {{ 'home.milkSaletransfer' | translate }}
               </label>
               <label class="checkbox-item" *ngIf="hasLedger">
-                <input type="checkbox" [(ngModel)]="transferAccount" name="transferAccount">
+                <input type="checkbox" [(ngModel)]="transferAccount" name="transferAccount" (change)="onTransferCheckboxChange()">
                 {{ 'home.accounttransfer' | translate }}
               </label>
             </div>
