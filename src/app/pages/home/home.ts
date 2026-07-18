@@ -120,11 +120,18 @@ cobf = '';
     milkSale:       string; milkSaleMe:       number | null; milkSaleCobf:       string;
     account:        string;
     billTransfer:   string;
+    // raw ISO dates for smart-default logic
+    milkCollectionRaw: string | null;
+    milkSaleRaw:       string | null;
+    accountRaw:        string | null;
   } = {
     milkCollection: '--', milkCollectionMe: null, milkCollectionCobf: '',
     milkSale:       '--', milkSaleMe:       null, milkSaleCobf:       '',
     account:        '--',
     billTransfer:   '--',
+    milkCollectionRaw: null,
+    milkSaleRaw:       null,
+    accountRaw:        null,
   };
   latestDatesLoading = false;
 
@@ -402,17 +409,32 @@ loadLatestDates(socId: number): void {
         return `${dd}-${mm}-${yyyy}`;
       };
 
+      // Normalize a date-string to yyyy-MM-dd (strip time component)
+      const toIso = (dateStr: string | null | undefined): string | null => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return null;
+        return d.toISOString().split('T')[0];
+      };
+
       this.latestDates = {
-        milkCollection:    fmt(res?.milktrn?.trndate),
-        milkCollectionMe:  res?.milktrn?.me ?? null,
+        milkCollection:     fmt(res?.milktrn?.trndate),
+        milkCollectionMe:   res?.milktrn?.me ?? null,
         milkCollectionCobf: (res?.milktrn?.cobf ?? '').toUpperCase(),
-        milkSale:          fmt(res?.milksale?.trdate),
-        milkSaleMe:        res?.milksale?.me ?? null,
-        milkSaleCobf:      (res?.milksale?.cobf ?? '').toUpperCase(),
-        account:           fmt(res?.acctrn?.trdates),
-        billTransfer:      fmt(res?.billtran?.billdate),
+        milkSale:           fmt(res?.milksale?.trdate),
+        milkSaleMe:         res?.milksale?.me ?? null,
+        milkSaleCobf:       (res?.milksale?.cobf ?? '').toUpperCase(),
+        account:            fmt(res?.acctrn?.trdates),
+        // Show todate (bill period end) instead of billdate (posting date)
+        billTransfer:       fmt(res?.billtran?.todate),
+        // raw ISO strings for smart-default logic
+        milkCollectionRaw:  toIso(res?.milktrn?.trndate),
+        milkSaleRaw:        toIso(res?.milksale?.trdate),
+        accountRaw:         toIso(res?.acctrn?.trdates),
       };
       this.latestDatesLoading = false;
+      // Apply smart defaults now that latest-dates are available
+      this.applySmartDefaults();
       this.cdr.detectChanges();
     },
     error: err => {
@@ -420,6 +442,98 @@ loadLatestDates(socId: number): void {
       this.latestDatesLoading = false;
     }
   });
+}
+
+/**
+ * Calculates and sets fromDate, collectionTime (shift) and milkType (cobf)
+ * based on which transfer checkboxes are selected and the last transferred record.
+ *
+ * Rules for milk collection:
+ *  - last me=1 (morning) → same date, auto-select evening (me=2), set cobf to opposite
+ *  - last me=2 (evening) → next day as fromDate, reset shift=both, reset cobf=both
+ *
+ * Rules for milk sale: same as collection using milkSale fields.
+ * Rules for account: fromDate = last account date + 1 day.
+ * When only account is checked the shift/cobf fields are irrelevant.
+ */
+applySmartDefaults(): void {
+  const today = new Date().toISOString().split('T')[0];
+
+  // Helper: add N days to an ISO date string
+  const addDays = (iso: string, n: number): string => {
+    const d = new Date(iso);
+    d.setDate(d.getDate() + n);
+    return d.toISOString().split('T')[0];
+  };
+
+  // Decide which source drives the from-date, in priority order:
+  // 1. milk-collection (if checked)
+  // 2. milk-sale (if checked and collection not checked)
+  // 3. account (if checked and others not checked)
+
+  let newFromDate: string = today;
+  let newToDate:   string = today;
+  let newCollectionTime = 0; // 0=both, 1=morning, 2=evening
+  let newMilkType       = 0; // 0=both, 1=cow,     2=buffalo
+
+  if (this.transferCollection && this.latestDates.milkCollectionRaw) {
+    const lastDate = this.latestDates.milkCollectionRaw;
+    const lastMe   = this.latestDates.milkCollectionMe;   // 1=morning, 2=evening
+    const lastCobf = this.latestDates.milkCollectionCobf; // 'C' or 'B'
+
+    if (lastMe === 2) {
+      // Evening already done → move to next day, both shifts, both types
+      newFromDate       = addDays(lastDate, 1);
+      newToDate         = addDays(lastDate, 1);
+      newCollectionTime = 0;
+      newMilkType       = 0;
+    } else if (lastMe === 1) {
+      // Only morning done → same day, evening remains
+      newFromDate       = lastDate;
+      newToDate         = lastDate;
+      newCollectionTime = 2; // evening
+      // Set remaining milk type: if cow was last → buffalo remains, else cow remains
+      newMilkType = lastCobf === 'C' ? 2 : lastCobf === 'B' ? 1 : 0;
+    } else {
+      newFromDate = lastDate;
+      newToDate   = lastDate;
+    }
+  } else if (this.transferMilkSale && this.latestDates.milkSaleRaw) {
+    const lastDate = this.latestDates.milkSaleRaw;
+    const lastMe   = this.latestDates.milkSaleMe;
+    const lastCobf = this.latestDates.milkSaleCobf;
+
+    if (lastMe === 2) {
+      newFromDate       = addDays(lastDate, 1);
+      newToDate         = addDays(lastDate, 1);
+      newCollectionTime = 0;
+      newMilkType       = 0;
+    } else if (lastMe === 1) {
+      newFromDate       = lastDate;
+      newToDate         = lastDate;
+      newCollectionTime = 2;
+      newMilkType = lastCobf === 'C' ? 2 : lastCobf === 'B' ? 1 : 0;
+    } else {
+      newFromDate = lastDate;
+      newToDate   = lastDate;
+    }
+  } else if (this.transferAccount && this.latestDates.accountRaw) {
+    // For account transfer just advance by one day
+    newFromDate       = addDays(this.latestDates.accountRaw, 1);
+    newToDate         = addDays(this.latestDates.accountRaw, 1);
+    newCollectionTime = 0;
+    newMilkType       = 0;
+  }
+
+  this.fromDate       = newFromDate;
+  this.toDate         = newToDate;
+  this.collectionTime = newCollectionTime;
+  this.milkType       = newMilkType;
+}
+
+/** Called from template when any of the three transfer checkboxes change. */
+onTransferCheckboxChange(): void {
+  this.applySmartDefaults();
 }
 
 loadDevices() {
