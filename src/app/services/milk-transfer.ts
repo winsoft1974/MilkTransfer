@@ -346,6 +346,37 @@ sendMilkCollection(
     return this.http.post(`${this.apiUrl}/dedentry`, data, { headers });
   }
 
+// // postDeductions(data: any[]): Observable<any> {
+// //     const soc = this.storage.getSocCode(); // Get society code from storage
+
+// //     if (!data || data.length === 0) {
+// //       return of({ skipped: true, message: 'No deduction records to upload' });
+// //     }
+
+// //     const mappedDeductions = data.map(r => ({
+// //       dedctnDate: this.toIsoDateString(r.Dedctn_date ?? r.Dedctn_Date ?? r.dedctn_date ?? r.dedctnDate),
+// //       dedctnTrno: this.safeInt(r.Dedctn_Trno ?? r.Dedctn_TrNo ?? r.dedctn_trno ?? r.dedctnTrno),
+// //       dedcode: this.safeInt(r.Dedcode ?? r.dedcode),
+// //       membCode: this.safeInt(r.Memb_code ?? r.Memb_Code ?? r.memb_code ?? r.membCode),
+// //       dedctnAmt1: this.safeDouble(r.Dedctn_Amt1 ?? r.Dedctn_amt1 ?? r.dedctn_amt1 ?? r.dedctnAmt1),
+// //       actdedAmt: this.safeDouble(r.actded_amt ?? r.actdedAmt ?? r.ActdedAmt ?? 0),
+// //       cobf: r.cobf ?? r.Cobf ?? 'C',
+      
+// //       // Ensure trntype is mapped cleanly
+// //       trntype: this.safeInt(r.trntype ?? r.Trntype ?? r.trnType ?? 1),
+      
+// //       mbillno: this.safeInt(r.mBillNo ?? r.mbillno ?? r.mBillno ?? 0),
+// //       billno: this.safeInt(r.BillNo ?? r.billno ?? r.billNo ?? 0),
+// //       dedName: r.DedName ?? r.dedName ?? '',
+// //       dedearn: this.safeInt(r.Dedearn ?? r.dedearn ?? r.ded_earn ?? 0),
+      
+// //       // Inject the society code so the live server can route to the correct partition
+// //       socCode: Number(soc)
+// //     }));
+
+//     const headers = new HttpHeaders({ 'Content-Type': 'application/json-patch+json' });
+//     return this.http.post(`${this.apiUrl}/dedentry`, mappedDeductions, { headers });
+//   }
 
    
 
@@ -507,76 +538,152 @@ sendMilkSale(msParam: number, time: number, rows: any[]): Observable<any> {
 
 
 
-    sendAccounts(fromDate: string, toDate: string, rows: any[]): Observable<any> {
-      const soc = this.storage.getSocCode();
+    // sendAccounts(fromDate: string, toDate: string, rows: any[]): Observable<any> {
+    //   const soc = this.storage.getSocCode();
 
-      if (!rows || rows.length === 0) {
-        return of({ skipped: true, message: 'No account records to upload' });
-      }
+    //   if (!rows || rows.length === 0) {
+    //     return of({ skipped: true, message: 'No account records to upload' });
+    //   }
 
-      // 1. Logic moved to sequential upload to prevent database locks and duplicates
-      const chunks: any[][] = [];
-      for (let i = 0; i < rows.length; i += 100) {
-        chunks.push(rows.slice(i, i + 100));
-      }
+    //   // 1. Logic moved to sequential upload to prevent database locks and duplicates
+    //   const chunks: any[][] = [];
+    //   for (let i = 0; i < rows.length; i += 100) {
+    //     chunks.push(rows.slice(i, i + 100));
+    //   }
 
-      return rxFrom(chunks).pipe(
-        // 🔥 FIX: Use concatMap (sequential) instead of mergeMap (parallel)
-        concatMap((chunk: any[]) => {
-          const mappedChunk = chunk.map(r => ({
-            trno: this.safeInt(r.Trno ?? r.trno),
-            accno: this.safeInt(r.Accno ?? r.accno),
-            daccno: this.safeInt(r.Daccno ?? r.daccno),
-            trntype: r.Trntype ?? r.trntype ?? '',
-            crdb: r.Crdb ?? r.crdb ?? '',
-            docno: this.safeInt(r.Docno ?? r.docno),
+    //   return rxFrom(chunks).pipe(
+    //     // 🔥 FIX: Use concatMap (sequential) instead of mergeMap (parallel)
+    //     concatMap((chunk: any[]) => {
+    //       const mappedChunk = chunk.map(r => ({
+    //         trno: this.safeInt(r.Trno ?? r.trno),
+    //         accno: this.safeInt(r.Accno ?? r.accno),
+    //         daccno: this.safeInt(r.Daccno ?? r.daccno),
+    //         trntype: r.Trntype ?? r.trntype ?? '',
+    //         crdb: r.Crdb ?? r.crdb ?? '',
+    //         docno: this.safeInt(r.Docno ?? r.docno),
 
-            // Match C# Model: Trdates
-            trdates: this.toIsoDateString(r.Trdates ?? r.Trdate ?? r.trdate),
+    //         // Match C# Model: Trdates
+    //         trdates: this.toIsoDateString(r.Trdates ?? r.Trdate ?? r.trdate),
 
-            part: r.part ?? r.Part ?? '',
-            amt: this.safeDouble(r.Amt ?? r.amt),
-            no: this.safeInt(r.No ?? r.no),
-            sbaccno: this.safeInt(r.SbAccNo ?? r.sbaccno ?? r.sbAccNo),
-            chqdates: this.toIsoDateString(r.ChqDates ?? r.Chqdates ?? r.ChqDate ?? r.chqdates ?? r.chqdate),
-            bankrecondates: this.toIsoDateString(r.BankReconDates ?? r.BankReconDate ?? r.bankReconDates ?? r.bankrecondate),
-            voucher_no: this.safeInt(r.Voucher_No ?? r.voucher_no ?? r.voucherNo),
-            post_flag: this.safeInt(r.Post_Flag ?? r.post_flag ?? r.postFlag),
-            subtypeno: this.safeInt(r.SubTypeNo ?? r.subtypeno ?? r.subTypeNo),
-            bill_no: this.safeInt(r.Bill_No ?? r.bill_no ?? r.billNo),
-            opind: this.safeInt(r.OpInd ?? r.opind),
-            chqno: String(r.ChqNos ?? r.ChqNo ?? r.chqno ?? '0'),
-            passind: this.safeInt(r.PassInd ?? r.passind),
+    //         part: r.part ?? r.Part ?? '',
+    //         amt: this.safeDouble(r.Amt ?? r.amt),
+    //         no: this.safeInt(r.No ?? r.no),
+    //         sbaccno: this.safeInt(r.SbAccNo ?? r.sbaccno ?? r.sbAccNo),
+    //         chqdates: this.toIsoDateString(r.ChqDates ?? r.Chqdates ?? r.ChqDate ?? r.chqdates ?? r.chqdate),
+    //         bankrecondates: this.toIsoDateString(r.BankReconDates ?? r.BankReconDate ?? r.bankReconDates ?? r.bankrecondate),
+    //         voucher_no: this.safeInt(r.Voucher_No ?? r.voucher_no ?? r.voucherNo),
+    //         post_flag: this.safeInt(r.Post_Flag ?? r.post_flag ?? r.postFlag),
+    //         subtypeno: this.safeInt(r.SubTypeNo ?? r.subtypeno ?? r.subTypeNo),
+    //         bill_no: this.safeInt(r.Bill_No ?? r.bill_no ?? r.billNo),
+    //         opind: this.safeInt(r.OpInd ?? r.opind),
+    //         chqno: String(r.ChqNos ?? r.ChqNo ?? r.chqno ?? '0'),
+    //         passind: this.safeInt(r.PassInd ?? r.passind),
 
-            // Match C# Model: SysDates
-            sysdates: this.toIsoDateString(r.sysdates ?? r.SysDate ?? r.sysdate),
+    //         // Match C# Model: SysDates
+    //         sysdates: this.toIsoDateString(r.sysdates ?? r.SysDate ?? r.sysdate),
 
-            usercode: this.safeInt(r.UserCode ?? r.usercode ?? r.userCode),
-            bouncereason: r.BounceReason ?? r.bouncereason ?? '',
-            strbillno: this.safeInt(r.StrBillNos ?? r.strbillno ?? r.strBillNo),
-            billdetind: this.safeInt(r.BillDetInd ?? r.billdetind),
-            billtypeno: this.safeInt(r.BillTypeNo ?? r.billtypeno ?? r.billTypeNo),
-            subamt: this.safeDouble(r.SubAmt ?? r.subamt ?? r.subAmt),
-            crdays: this.safeInt(r.CrDays ?? r.crdays ?? r.crDays),
-            linenos: this.safeInt(r.LineNos ?? r.linenos ?? r.lineNos),
-            refaccno: this.safeInt(r.RefAccNos ?? r.refaccno ?? r.refAccNo),
-            refsbaccno: this.safeInt(r.RefSbAccNos ?? r.refsbaccno ?? r.refSbAccNo),
-            soccode: Number(soc)
-          }));
+    //         usercode: this.safeInt(r.UserCode ?? r.usercode ?? r.userCode),
+    //         bouncereason: r.BounceReason ?? r.bouncereason ?? '',
+    //         strbillno: this.safeInt(r.StrBillNos ?? r.strbillno ?? r.strBillNo),
+    //         billdetind: this.safeInt(r.BillDetInd ?? r.billdetind),
+    //         billtypeno: this.safeInt(r.BillTypeNo ?? r.billtypeno ?? r.billTypeNo),
+    //         subamt: this.safeDouble(r.SubAmt ?? r.subamt ?? r.subAmt),
+    //         crdays: this.safeInt(r.CrDays ?? r.crdays ?? r.crDays),
+    //         linenos: this.safeInt(r.LineNos ?? r.linenos ?? r.lineNos),
+    //         refaccno: this.safeInt(r.RefAccNos ?? r.refaccno ?? r.refAccNo),
+    //         refsbaccno: this.safeInt(r.RefSbAccNos ?? r.refsbaccno ?? r.refSbAccNo),
+    //         soccode: Number(soc)
+    //       }));
 
-          const payload = {
-            acctrn: mappedChunk,
-            fromDate: this.toIsoDateString(fromDate),
-            toDate: this.toIsoDateString(toDate)
-          };
+    //       const payload = {
+    //         acctrn: mappedChunk,
+    //         fromDate: this.toIsoDateString(fromDate),
+    //         toDate: this.toIsoDateString(toDate)
+    //       };
 
-          return this.http.post(`${this.apiUrl}/Acctrn`, payload);
-        }),
-        toArray()
-      );
+    //       return this.http.post(`${this.apiUrl}/Acctrn`, payload);
+    //     }),
+    //     toArray()
+    //   );
+    // }
+
+sendAccounts(fromDate: string, toDate: string, rows: any[]): Observable<any> {
+    const soc = this.storage.getSocCode();
+
+    if (!rows || rows.length === 0) {
+      return of({ skipped: true, message: 'No account records to upload' });
     }
 
+    // 1. Logic moved to sequential upload to prevent database locks and duplicates
+    const chunks: any[][] = [];
+    for (let i = 0; i < rows.length; i += 100) {
+      chunks.push(rows.slice(i, i + 100));
+    }
 
+    return rxFrom(chunks).pipe(
+      // sequentially upload chunks
+      concatMap((chunk: any[]) => {
+        const mappedChunk = chunk.map(r => ({
+          trno: this.safeInt(r.Trno ?? r.trno),
+          accno: this.safeInt(r.Accno ?? r.accno),
+          daccno: this.safeInt(r.Daccno ?? r.daccno),
+          trntype: r.Trntype ?? r.trntype ?? '',
+          crdb: r.Crdb ?? r.crdb ?? '',
+          docno: this.safeInt(r.Docno ?? r.docno),
+
+          // Match C# Model: Trdates
+          trdates: this.toIsoDateString(r.Trdates ?? r.Trdate ?? r.trdate),
+
+          part: r.part ?? r.Part ?? '',
+          amt: this.safeDouble(r.Amt ?? r.amt),
+          no: this.safeInt(r.No ?? r.no),
+          sbaccno: this.safeInt(r.SbAccNo ?? r.sbaccno ?? r.sbAccNo),
+          chqdates: this.toIsoDateString(r.ChqDates ?? r.Chqdates ?? r.ChqDate ?? r.chqdates ?? r.chqdate),
+          bankrecondates: this.toIsoDateString(r.BankReconDates ?? r.BankReconDate ?? r.bankReconDates ?? r.bankrecondate),
+          
+          // 🔥 FIX: Renamed keys to match C# properties (VoucherNo, PostFlag, BillNo)
+          voucherNo: this.safeInt(r.Voucher_No ?? r.voucher_no ?? r.voucherNo),
+          postFlag: this.safeInt(r.Post_Flag ?? r.post_flag ?? r.postFlag),
+          subtypeno: this.safeInt(r.SubTypeNo ?? r.subtypeno ?? r.subTypeNo),
+          billNo: this.safeInt(r.Bill_No ?? r.bill_no ?? r.billNo),
+          
+          opind: this.safeInt(r.OpInd ?? r.opind),
+          chqno: String(r.ChqNos ?? r.ChqNo ?? r.chqno ?? '0'),
+          passind: this.safeInt(r.PassInd ?? r.passind),
+
+          // Match C# Model: SysDates
+          sysdates: this.toIsoDateString(r.sysdates ?? r.SysDate ?? r.sysdate),
+
+          usercode: this.safeInt(r.UserCode ?? r.usercode ?? r.userCode),
+          
+          // 🔥 FIX: Renamed key to match C# property BouncerReason
+          bouncerreason: r.BounceReason ?? r.bouncereason ?? '',
+          
+          strbillno: this.safeInt(r.StrBillNos ?? r.strbillno ?? r.strBillNo),
+          billdetind: this.safeInt(r.BillDetInd ?? r.billdetind),
+          billtypeno: this.safeInt(r.BillTypeNo ?? r.billtypeno ?? r.billTypeNo),
+          
+          // 🔥 FIX: Mapped using safeInt to align with your pgAdmin "subamt integer" column
+          subamt: this.safeInt(r.SubAmt ?? r.subamt ?? r.subAmt),
+          
+          crdays: this.safeInt(r.CrDays ?? r.crdays ?? r.crDays),
+          linenos: this.safeInt(r.LineNos ?? r.linenos ?? r.lineNos),
+          refaccno: this.safeInt(r.RefAccNos ?? r.refaccno ?? r.refAccNo),
+          refsbaccno: this.safeInt(r.RefSbAccNos ?? r.refsbaccno ?? r.refSbAccNo),
+          soccode: Number(soc)
+        }));
+
+        const payload = {
+          acctrn: mappedChunk,
+          fromDate: this.toIsoDateString(fromDate),
+          toDate: this.toIsoDateString(toDate)
+        };
+
+        return this.http.post(`${this.apiUrl}/Acctrn`, payload);
+      }),
+      toArray()
+    );
+  }
 
     deleteAccounts(fromDate: string, toDate: string, socCode: string): Observable<any> {
       const params = new HttpParams()
@@ -618,50 +725,110 @@ sendMilkSale(msParam: number, time: number, rows: any[]): Observable<any> {
      * 1. Maps the entire list with explicit lowercase/underscored types matching pgAdmin
      * 2. POSTs the entire table at once
      */
+    // sendGlms(rows: any[]): Observable<any> {
+    //   const soc = this.storage.getSocCode();
+
+    //   if (!rows || rows.length === 0) {
+    //     return of({ skipped: true, message: 'No GLMS records to upload' });
+    //   }
+
+    //   // Explicitly map all database columns to safe lowercase/underscored models matching pgAdmin
+    //   const mappedRows = rows.map(r => ({
+    //     accno:            this.safeInt(r.Accno ?? r.accno),
+    //     accname:          r.AccName ?? r.accname ?? r.Accname ?? '',
+    //     actno:            this.safeInt(r.Actnos ?? r.Actno ?? r.actnos ?? r.actno),
+    //     opbal:            this.safeDouble(r.Opbal ?? r.opbal),
+    //     crtot:            this.safeDouble(r.Crtot ?? r.crtot),
+    //     drtot:            this.safeDouble(r.Drtot ?? r.drtot),
+    //     clbal:            this.safeDouble(r.Clbal ?? r.clbal),
+    //     type:             this.safeInt(r.Type ?? r.type),
+    //     dcodeno:          this.safeInt(r.Dcodeno ?? r.dcodeno),
+    //     locktype:         r.Locktype ?? r.locktype ?? '',
+    //     pltype:           r.Pltype ?? r.pltype ?? '',
+    //     dlink:            this.safeInt(r.DLink ?? r.dlink ?? r.Dlink),
+    //     accname_eng:      r.accname_Eng ?? r.accname_eng ?? r.accnameEng ?? '', // Maps to accname_eng
+    //     subtypeno:        this.safeInt(r.SubTypeNo ?? r.subtypeno ?? r.subTypeNo),
+    //     sales_taxno:      r.Sales_TaxNo ?? r.sales_taxno ?? r.salesTaxNo ?? '', // Maps to sales_taxno
+    //     address:          r.Address ?? r.address ?? '',
+    //     is_supplier:      this.safeInt(r.Is_Supplier ?? r.is_supplier ?? r.isSupplier), // Maps to is_supplier
+    //     show_subdetail:   this.safeInt(r.Show_SubDetail ?? r.show_subdetail ?? r.showSubDetail), // Maps to show_subdetail
+    //     phoneno:          r.PhoneNo ?? r.phoneno ?? r.phonenumber ?? '',
+    //     fax:              r.Fax ?? r.fax ?? '',
+    //     email:            r.Email ?? r.email ?? '',
+    //     mobile:           r.Mobile ?? r.mobile ?? '',
+    //     tinno:            r.Tinno ?? r.tinno ?? '',
+    //     cstno:            r.CSTNo ?? r.cstno ?? r.cstNo ?? '',
+    //     sysdate:          this.toIsoDateString(r.SysDate ?? r.sysdate ?? r.sysDate),
+    //     usercode:         this.safeInt(r.UserCode ?? r.usercode ?? r.userCode),
+    //     billdetind:       this.safeInt(r.BillDetInd ?? r.billdetind),
+    //     show_deddtl:      this.safeInt(r.Show_DedDtl ?? r.show_deddtl ?? r.showDedDtl), // Maps to show_deddtl
+    //     lastyrbal:        this.safeDouble(r.LastYrBal ?? r.lastyrbal ?? r.lastYrBal),
+    //     gstno:            r.GSTno ?? r.gstno ?? r.gstNo ?? '',
+    //     soccode:          Number(soc) // Standardized to strictly lowercase
+    //   }));
+
+    //   return this.http.post(`${this.apiUrl}/Glms`, mappedRows);
+    // }
+
     sendGlms(rows: any[]): Observable<any> {
-      const soc = this.storage.getSocCode();
+    const soc = this.storage.getSocCode();
 
-      if (!rows || rows.length === 0) {
-        return of({ skipped: true, message: 'No GLMS records to upload' });
-      }
-
-      // Explicitly map all database columns to safe lowercase/underscored models matching pgAdmin
-      const mappedRows = rows.map(r => ({
-        accno:            this.safeInt(r.Accno ?? r.accno),
-        accname:          r.AccName ?? r.accname ?? r.Accname ?? '',
-        actno:            this.safeInt(r.Actnos ?? r.Actno ?? r.actnos ?? r.actno),
-        opbal:            this.safeDouble(r.Opbal ?? r.opbal),
-        crtot:            this.safeDouble(r.Crtot ?? r.crtot),
-        drtot:            this.safeDouble(r.Drtot ?? r.drtot),
-        clbal:            this.safeDouble(r.Clbal ?? r.clbal),
-        type:             this.safeInt(r.Type ?? r.type),
-        dcodeno:          this.safeInt(r.Dcodeno ?? r.dcodeno),
-        locktype:         r.Locktype ?? r.locktype ?? '',
-        pltype:           r.Pltype ?? r.pltype ?? '',
-        dlink:            this.safeInt(r.DLink ?? r.dlink ?? r.Dlink),
-        accname_eng:      r.accname_Eng ?? r.accname_eng ?? r.accnameEng ?? '', // Maps to accname_eng
-        subtypeno:        this.safeInt(r.SubTypeNo ?? r.subtypeno ?? r.subTypeNo),
-        sales_taxno:      r.Sales_TaxNo ?? r.sales_taxno ?? r.salesTaxNo ?? '', // Maps to sales_taxno
-        address:          r.Address ?? r.address ?? '',
-        is_supplier:      this.safeInt(r.Is_Supplier ?? r.is_supplier ?? r.isSupplier), // Maps to is_supplier
-        show_subdetail:   this.safeInt(r.Show_SubDetail ?? r.show_subdetail ?? r.showSubDetail), // Maps to show_subdetail
-        phoneno:          r.PhoneNo ?? r.phoneno ?? r.phonenumber ?? '',
-        fax:              r.Fax ?? r.fax ?? '',
-        email:            r.Email ?? r.email ?? '',
-        mobile:           r.Mobile ?? r.mobile ?? '',
-        tinno:            r.Tinno ?? r.tinno ?? '',
-        cstno:            r.CSTNo ?? r.cstno ?? r.cstNo ?? '',
-        sysdate:          this.toIsoDateString(r.SysDate ?? r.sysdate ?? r.sysDate),
-        usercode:         this.safeInt(r.UserCode ?? r.usercode ?? r.userCode),
-        billdetind:       this.safeInt(r.BillDetInd ?? r.billdetind),
-        show_deddtl:      this.safeInt(r.Show_DedDtl ?? r.show_deddtl ?? r.showDedDtl), // Maps to show_deddtl
-        lastyrbal:        this.safeDouble(r.LastYrBal ?? r.lastyrbal ?? r.lastYrBal),
-        gstno:            r.GSTno ?? r.gstno ?? r.gstNo ?? '',
-        soccode:          Number(soc) // Standardized to strictly lowercase
-      }));
-
-      return this.http.post(`${this.apiUrl}/Glms`, mappedRows);
+    if (!rows || rows.length === 0) {
+      return of({ skipped: true, message: 'No GLMS records to upload' });
     }
+
+    // Explicitly map keys to match C# properties to allow successful JSON deserialization
+    const mappedRows = rows.map(r => ({
+      accno:            this.safeInt(r.Accno ?? r.accno),
+      accname:          r.AccName ?? r.accname ?? r.Accname ?? '',
+      
+      // 🔥 FIX: Renamed key to match C# property name 'Actnos'
+      actnos:           this.safeInt(r.Actnos ?? r.Actno ?? r.actnos ?? r.actno),
+      
+      opbal:            this.safeDouble(r.Opbal ?? r.opbal),
+      crtot:            this.safeDouble(r.Crtot ?? r.crtot),
+      drtot:            this.safeDouble(r.Drtot ?? r.drtot),
+      clbal:            this.safeDouble(r.Clbal ?? r.clbal),
+      type:             this.safeInt(r.Type ?? r.type),
+      dcodeno:          this.safeInt(r.Dcodeno ?? r.dcodeno),
+      locktype:         r.Locktype ?? r.locktype ?? '',
+      pltype:           r.Pltype ?? r.pltype ?? '',
+      dlink:            this.safeInt(r.DLink ?? r.dlink ?? r.Dlink),
+      accname_eng:      r.accname_Eng ?? r.accname_eng ?? r.accnameEng ?? '', 
+      subtypeno:        this.safeInt(r.SubTypeNo ?? r.subtypeno ?? r.subTypeNo),
+      
+      // 🔥 FIX: Renamed key to match C# property name 'SalesTaxno'
+      salesTaxno:       r.Sales_TaxNo ?? r.sales_taxno ?? r.salesTaxNo ?? '', 
+      
+      address:          r.Address ?? r.address ?? '',
+      
+      // 🔥 FIX: Renamed key to match C# property name 'IsSupplier'
+      isSupplier:       this.safeInt(r.Is_Supplier ?? r.is_supplier ?? r.isSupplier), 
+      
+      // 🔥 FIX: Renamed key to match C# property name 'ShowSubdetail'
+      showSubdetail:    this.safeInt(r.Show_SubDetail ?? r.show_subdetail ?? r.showSubDetail), 
+      
+      phoneno:          r.PhoneNo ?? r.phoneno ?? r.phonenumber ?? '',
+      fax:              r.Fax ?? r.fax ?? '',
+      email:            r.Email ?? r.email ?? '',
+      mobile:           r.Mobile ?? r.mobile ?? '',
+      tinno:            r.Tinno ?? r.tinno ?? '',
+      cstno:            r.CSTNo ?? r.cstno ?? r.cstNo ?? '',
+      sysdate:          this.toIsoDateString(r.SysDate ?? r.sysdate ?? r.sysDate),
+      usercode:         this.safeInt(r.UserCode ?? r.usercode ?? r.userCode),
+      billdetind:       this.safeInt(r.BillDetInd ?? r.billdetind),
+      
+      // 🔥 FIX: Renamed key to match C# property name 'ShowDedDt'
+      showDedDt:        this.safeInt(r.Show_DedDtl ?? r.show_deddtl ?? r.showDedDtl), 
+      
+      lastyrbal:        this.safeDouble(r.LastYrBal ?? r.lastyrbal ?? r.lastYrBal),
+      gstno:            r.GSTno ?? r.gstno ?? r.gstNo ?? '',
+      soccode:          Number(soc)
+    }));
+
+    return this.http.post(`${this.apiUrl}/Glms`, mappedRows);
+  }
+
   // =========================================================
   // DOWNLOAD / SYNC (Fetching FROM Live Server to Local)
   // =========================================================
@@ -696,25 +863,33 @@ milkSaleSyncPush(msParam: string, payload: any): Observable<any> {
     const soc = this.storage.getSocCode();
 
     const mappedSales = (payload.milksale || []).map((s: any) => ({
-      trdate:   this.toIsoDateString(s.trdate || s.Trdate || s.TrDate), 
-      liters:   this.safeDouble(s.liters || s.Liters),
-      cobf:     String(s.cobf || s.Cobf || 'C').substring(0, 1).toUpperCase(),
-      me:       Number(s.me || payload.me || 1),
-      rate:     this.safeDouble(s.rate || s.Rate),
-      tot:      this.safeDouble(s.tot || s.Tot || s.amount),
-      crca:     'R', 
-      membCode: Number(s.MembCode || s.memb_code || 0),
-      zoonCode: Number(s.zoon_code || s.zoonCode || 0),
-      fat:      this.safeDouble(s.fat || s.Fat),
-      deviceId: Number(s.deviceId || 1),
-      socCode:  Number(soc)
+      trdate:     this.toIsoDateString(s.trdate || s.Trdate || s.TrDate), 
+      liters:     this.safeDouble(s.liters || s.Liters),
+      cobf:       String(s.cobf || s.Cobf || 'C').substring(0, 1).toUpperCase(),
+      me:         this.safeInt(s.me || payload.me || 1),
+      rate:       this.safeDouble(s.rate || s.Rate),
+      tot:        this.safeDouble(s.tot || s.Tot || s.amount),
+      crca:       'R', 
+      membCode:   this.safeInt(s.MembCode || s.memb_code || 0),
+      zoonCode:   this.safeInt(s.zoon_code || s.zoonCode || 0),
+      fat:        this.safeDouble(s.fat || s.Fat),
+      deviceId:   this.safeInt(s.deviceId || 1),
+      mstCode:    this.safeInt(s.mstcode ?? s.MSTcode ?? s.MSTCode ?? s.mst_code),
+      postflag:   String(s.Post_flag ?? s.post_flag ?? s.Postflag ?? s.postflag ?? '').substring(0, 5),
+      gavaliCode: this.safeInt(s.Gavali_Code ?? s.gavali_code ?? s.GavaliCode ?? s.gavaliCode),
+      prodcode:   this.safeInt(s.prod_code ?? s.prod_Code ?? s.prodcode), 
+     custname:   String(s.custname ?? s.CustName ?? s.Custname ?? '').substring(0, 30),                    
+      
+      // 🔥 FIX: Use safeInt to guarantee a clean number and prevent NaN JSON serialization errors
+      socCode:    this.safeInt(soc) 
     }));
 
+    // Ensure fromDate and toDate have a fallback to prevent 400 Bad Request on C# DateOnly properties
     const finalPayload = {
       milksale: mappedSales,
-      me:       Number(payload.me || 1),
-      fromDate: this.toIsoDateString(payload.fromDate),
-      toDate:   this.toIsoDateString(payload.toDate)
+      me:       this.safeInt(payload.me || 1),
+      fromDate: this.toIsoDateString(payload.fromDate || new Date()),
+      toDate:   this.toIsoDateString(payload.toDate || new Date())
     };
 
     const headers = new HttpHeaders({
@@ -722,7 +897,7 @@ milkSaleSyncPush(msParam: string, payload: any): Observable<any> {
       'accept': '*/*'
     });
 
-    const url = `${this.apiUrl}/MilkSale?MSparam=${msParam}&socCode=${soc}`;
+    const url = `${this.apiUrl}/MilkSale?MSparam=${msParam}&socCode=${this.safeInt(soc)}`;
     return this.http.post(url, finalPayload, { headers });
   }
   // src/app/services/milk-transfer.ts
